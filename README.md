@@ -15,6 +15,19 @@ Openarc is a lightweight, high-performance web interface designed to seamlessly 
 
 Built with a focus on premium aesthetics and responsive design, Openarc supports dynamic data visualization, markdown rendering, and rapid local API proxying.
 
+## Screenshots
+
+<div align="center">
+  <h3>1. Claude-Style Minimalist Chat Interface</h3>
+  <img src="public/assets/chat_ui.png" alt="Openarc Chat Interface" width="800" style="border-radius: 8px; margin-bottom: 20px;" />
+  
+  <h3>2. Interactive Chart Rendering</h3>
+  <img src="public/assets/chart_visualizer.png" alt="Openarc Chart Visualization" width="800" style="border-radius: 8px; margin-bottom: 20px;" />
+  
+  <h3>3. Rich Code Syntax Highlighting</h3>
+  <img src="public/assets/code_rendering.png" alt="Openarc Code Rendering" width="800" style="border-radius: 8px;" />
+</div>
+
 ## Features
 
 - 🔒 **Absolute Privacy:** All data processing and inference happens locally. No data is sent to the cloud.
