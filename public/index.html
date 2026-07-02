@@ -4,13 +4,15 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Openarc — Private Local AI</title>
+  <link rel="shortcut icon" href="assets/logo.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     /* ══════════════════════════════════════
        DESIGN SYSTEM — Openarc Dark Mode
@@ -42,6 +44,8 @@
        --radius-lg:    20px;
        --shadow:       0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
        --shadow-md:    0 4px 12px rgba(0,0,0,0.4);
+       --modal-bg:     rgba(15, 15, 17, 0.75);
+       --modal-border: rgba(39, 39, 42, 0.6);
     }
 
     /* ══ LIGHT MODE ══ */
@@ -64,9 +68,11 @@
       --user-text:    #09090b;
       --ai-bubble:    #ffffff;
       --ai-border:    #e4e4e7;
-      --input-bg:     #ffffff;
+      --input-bg:       #ffffff;
       --shadow:       0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
       --shadow-md:    0 4px 12px rgba(0,0,0,0.1);
+      --modal-bg:     rgba(255, 255, 255, 0.75);
+      --modal-border: rgba(228, 228, 231, 0.6);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -143,8 +149,7 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 20px 12px;
-      gap: 4px;
+      padding: 16px 10px;
     }
 
     /* Logo */
@@ -152,7 +157,7 @@
       display: flex;
       align-items: center;
       gap: 9px;
-      padding: 4px 8px 20px;
+      padding: 4px 6px 14px;
       border-bottom: 1px solid var(--border);
       margin-bottom: 8px;
     }
@@ -172,18 +177,56 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 9px 10px;
-      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      border-radius: 6px;
       cursor: pointer;
       color: var(--text-2);
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 500;
-      transition: all 0.15s;
-      border: 1px solid transparent;
+      transition: all 0.1s ease;
+      margin-bottom: 2px;
     }
-    .nav-item:hover { background: var(--white); color: var(--text-1); border-color: var(--border); }
-    .nav-item.active { background: var(--white); color: var(--text-1); border-color: var(--border); box-shadow: var(--shadow); }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-1);
+    }
+    [data-theme='light'] .nav-item:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-1);
+    }
+    [data-theme='light'] .nav-item.active {
+      background: rgba(0, 0, 0, 0.06);
+    }
     .nav-icon { width: 15px; height: 15px; flex-shrink: 0; stroke: currentColor; fill: none; transition: stroke 0.15s; }
+
+    .new-chat-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-1);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      transition: all 0.1s ease;
+      margin: 4px 0 12px;
+      width: 100%;
+      user-select: none;
+    }
+    .new-chat-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--text-3);
+    }
+    [data-theme='light'] .new-chat-btn:hover {
+      background: rgba(0, 0, 0, 0.03);
+      border-color: var(--text-3);
+    }
 
     /* History section */
     .nav-section-label {
@@ -202,21 +245,33 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 7px 10px;
-      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      border-radius: 6px;
       cursor: pointer;
       color: var(--text-2);
       font-size: 12.5px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: all 0.15s;
-      border: 1px solid transparent;
+      transition: all 0.1s ease;
       position: relative;
+      margin-bottom: 1px;
     }
     .history-item span { overflow: hidden; text-overflow: ellipsis; flex: 1; }
-    .history-item:hover { background: var(--white); color: var(--text-1); border-color: var(--border); }
-    .history-item.active { background: var(--white); color: var(--text-1); border-color: var(--border); box-shadow: var(--shadow); }
+    .history-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-1);
+    }
+    [data-theme='light'] .history-item:hover {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    .history-item.active {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-1);
+    }
+    [data-theme='light'] .history-item.active {
+      background: rgba(0, 0, 0, 0.05);
+    }
     .h-del { opacity: 0; background: none; border: none; cursor: pointer; color: var(--text-3); font-size: 12px; padding: 2px 4px; border-radius: 4px; transition: 0.15s; flex-shrink: 0; }
     .history-item:hover .h-del { opacity: 1; }
     .h-del:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
@@ -382,32 +437,44 @@
     }
     .welcome-send-btn:hover { background: var(--accent-hover); }
 
-    /* Welcome bottom — action cards */
-    .welcome-bottom {
-      width: 100%;
-      background: var(--bg);
-      border-top: 1px solid var(--border-light);
-      padding: 24px 40px;
+    /* Welcome suggestions row (positioned directly below the input box) */
+    .suggestions-row {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      flex-shrink: 0;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 16px;
+      width: min(600px, 92%);
     }
-
-    .suggest-label { font-size: 11px; color: var(--text-3); font-weight: 500; letter-spacing: 0.3px; }
-    .suggestions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    
     .suggest-pill {
-      padding: 6px 14px;
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--btn-bg);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
       font-size: 12px;
+      font-weight: 500;
       color: var(--text-2);
       cursor: pointer;
-      transition: 0.15s;
+      user-select: none;
+      transition: all 0.15s ease;
     }
-    .suggest-pill:hover { background: rgba(99, 102, 241, 0.1); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.3); }
+    
+    .suggest-pill:hover {
+      background: var(--border);
+      color: var(--text-1);
+      transform: translateY(-1px);
+    }
+    
+    .suggest-pill svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
 
     /* ══ MESSAGES ══ */
     .messages {
@@ -513,6 +580,44 @@
     .stream-cursor::after { content:'▋'; color: var(--text-3); animation: blink .7s steps(1) infinite; }
     @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
+    /* RAG Status UI Styles */
+    .rag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: #10b981;
+      margin-bottom: 8px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+    }
+    [data-theme='light'] .rag-badge {
+      background: rgba(5, 150, 105, 0.08);
+      border-color: rgba(5, 150, 105, 0.2);
+      color: #059669;
+    }
+    .rag-pulse-dot {
+      width: 6px;
+      height: 6px;
+      background-color: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: ragPulse 2s infinite;
+    }
+    [data-theme='light'] .rag-pulse-dot {
+      background-color: #059669;
+    }
+    @keyframes ragPulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
     /* Premium Streaming Glow & Breathe Animation */
     .msg-row.assistant .msg-bubble.streaming {
       background: none !important;
@@ -549,10 +654,17 @@
     .reasoning-block > summary:hover { background: rgba(255,255,255,0.03); color: var(--text-1); }
     .reasoning-block > summary::-webkit-details-marker { display: none; }
     .reasoning-content { padding: 12px; font-size: 13.5px; color: var(--text-3); border-top: 1px solid var(--border); border-left: 2px solid #a855f7; border-radius: 0 0 var(--radius-sm) var(--radius-sm); font-style: italic; white-space: pre-wrap; line-height: 1.5; }
-    .msg-actions { display: flex; gap: 4px; opacity: 0; transition: 0.15s; }
+    .msg-actions { display: flex; gap: 8px; opacity: 0; transition: 0.15s; align-items: center; }
     .msg-row:hover .msg-actions { opacity: 1; }
     .msg-act-btn { background: none; border: 1px solid var(--border); color: var(--text-3); font-size: 11px; font-family: 'Inter', sans-serif; cursor: pointer; padding: 3px 8px; border-radius: 4px; transition: 0.15s; }
     .msg-act-btn:hover { color: var(--text-1); background: var(--white); }
+    .msg-icon-btn { background: none; border: none; color: var(--text-3); cursor: pointer; padding: 4px; border-radius: 4px; transition: 0.15s; display: flex; align-items: center; justify-content: center; }
+    .msg-icon-btn:hover { color: var(--text-1); background: rgba(255,255,255,0.06); }
+    [data-theme='light'] .msg-icon-btn:hover { background: rgba(0,0,0,0.04); }
+    
+    details.sources-details summary::-webkit-details-marker { display: none; }
+    details.sources-details summary { list-style: none; display: flex; align-items: center; gap: 6px; outline: none; cursor: pointer; }
+    details.sources-details[open] summary span { color: var(--text-1) !important; }
     .msg-metrics {
       display: flex;
       align-items: center;
@@ -655,7 +767,7 @@
       background: var(--bg-sidebar);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      min-width: 200px;
+      min-width: 265px;
       max-height: 220px;
       overflow-y: auto;
       z-index: 100;
@@ -702,10 +814,34 @@
     .input-hint { font-size: 11px; color: var(--text-3); text-align: center; margin-top: 8px; }
 
     /* ══ SYSTEM PROMPT MODAL ══ */
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.2s; }
+    .overlay { 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0, 0, 0, 0.4); 
+      backdrop-filter: blur(12px); 
+      -webkit-backdrop-filter: blur(12px); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 100; 
+      opacity: 0; 
+      pointer-events: none; 
+      transition: opacity 0.3s ease; 
+    }
     .overlay.open { opacity: 1; pointer-events: all; }
-    .modal { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: min(500px,90vw); box-shadow: var(--shadow-md); transform: scale(0.96); transition: 0.2s; }
-    .overlay.open .modal { transform: scale(1); }
+    .modal { 
+      background: var(--modal-bg); 
+      border: 1px solid var(--modal-border); 
+      border-radius: var(--radius); 
+      padding: 24px; 
+      width: min(500px,90vw); 
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0,0,0,0.2); 
+      transform: scale(0.95) translateY(10px); 
+      backdrop-filter: blur(20px); 
+      -webkit-backdrop-filter: blur(20px); 
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+    }
+    .overlay.open .modal { transform: scale(1) translateY(0); }
     .modal h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
     .modal p { font-size: 12.5px; color: var(--text-2); margin-bottom: 14px; }
     .modal textarea { width: 100%; min-height: 120px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; font-family: 'Inter', sans-serif; padding: 10px 12px; resize: vertical; line-height: 1.6; }
@@ -845,14 +981,63 @@
 
       .welcome-greeting { font-size: 28px; }
       .welcome-top { padding: 32px 20px 24px; }
-      .suggestions { flex-direction: column; gap: 8px; }
-      .suggest-pill { width: 100%; text-align: left; }
-
+      
       .topbar-left { gap: 8px; }
+    }
+    
+    #startup-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 16px;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+    #startup-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .startup-progress-bar {
+      width: 240px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .startup-progress-fill {
+      width: 30%;
+      height: 100%;
+      background: #6366f1;
+      border-radius: 3px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      animation: pulseProgress 2s infinite ease-in-out;
+    }
+    @keyframes pulseProgress {
+      0% { left: -30%; width: 30%; }
+      50% { left: 100%; width: 30%; }
+      100% { left: -30%; width: 30%; }
     }
   </style>
 </head>
 <body>
+  <!-- Startup Loader Overlay -->
+  <div id="startup-overlay">
+    <div style="width: 60px; height: 60px; font-size: 24px; border-radius: 16px; margin-bottom: 10px; background: var(--text-1); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);">OA</div>
+    <h2 id="startup-title" style="font-size: 16px; font-weight: 600; color: var(--text-1);">Initializing Private AI...</h2>
+    <p id="startup-subtitle" style="font-size: 12px; color: var(--text-3); max-width: 320px; line-height: 1.5; padding: 0 20px;">Preparing secure local intelligence. This takes a moment on first launch.</p>
+    <div class="startup-progress-bar">
+      <div class="startup-progress-fill"></div>
+    </div>
+  </div>
   <!-- ══════ MENU BAR ══════ -->
   <div class="menu-bar">
     <div class="menu-dropdown">
@@ -889,50 +1074,73 @@
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <aside class="sidebar" id="sidebar">
-    <div class="logo" style="justify-content: flex-start; padding: 4px 6px 18px; border-bottom: 1px solid var(--border); margin-bottom: 8px;">
-      <img src="logo.png" alt="Openarc Logo" style="max-height: 26px; width: auto; display: block;" />
+    <div class="logo" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 14px; border-bottom: 1px solid var(--border); margin-bottom: 8px;">
+      <span style="font-size: 16px; font-weight: 700; letter-spacing: -0.4px; color: var(--text-1); user-select: none;">openarc</span>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 13.5px; height: 13.5px; color: var(--text-3); cursor: pointer;" title="Search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 13.5px; height: 13.5px; color: var(--text-3); cursor: pointer;" title="Collapse sidebar" onclick="toggleSidebar()"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+      </div>
     </div>
 
-    <div class="nav-item active" id="nav-new" onclick="newChat(); closeSidebar();">
-      <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    <!-- New Chat Outline Button -->
+    <div class="new-chat-btn" onclick="newChat(); closeSidebar();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       New chat
     </div>
-    <div class="nav-item" onclick="openSettings(); closeSidebar();">
-      <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+
+    <!-- Main Navigation Options -->
+    <div class="nav-item active" id="nav-chats" onclick="showActiveChat(); closeSidebar();">
+      <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      Chats
+    </div>
+    <div class="nav-item" id="nav-data" onclick="openDataModal(); closeSidebar();">
+      <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path></svg>
+      Your Data
+    </div>
+    <div class="nav-item" id="nav-settings" onclick="openSettings(); closeSidebar();">
+      <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       Settings
     </div>
-    <div class="nav-item" onclick="openMissionModal(); closeSidebar();">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-      Our Mission
-    </div>
+
+
+    <!-- Actions Section Label -->
+    <div class="nav-section-label" style="margin-top: 10px;">Actions</div>
     <div class="nav-item" onclick="clearCurrentChat(); closeSidebar();">
-      <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+      <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
       Clear chat
     </div>
     <div class="nav-item" onclick="closeAllChats(); closeSidebar();" style="color: var(--text-3);">
-      <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+      <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
       Close all chats
     </div>
 
-    <div class="nav-section-label">Recent</div>
+    <!-- Recents Section Label -->
+    <div class="nav-section-label" style="margin-top: 10px;">Recent</div>
     <div class="history-list" id="history-list"></div>
 
-    <div class="sidebar-footer">
-      <div class="model-wrap" style="margin-bottom: 8px;">
-        <div class="model-label">Model</div>
-        <div id="model-status-label" class="model-status-label">Connecting...</div>
+    <div class="sidebar-footer" style="padding-top: 10px; border-top: 1px solid var(--border); margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+      <!-- Profile Card -->
+      <div style="display: flex; align-items: center; padding: 6px; border-radius: 6px; user-select: none;">
+        <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+            U
+          </div>
+          <div style="display: flex; flex-direction: column; overflow: hidden; line-height: 1.2;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Local User</span>
+            <span style="font-size: 10px; color: var(--text-3); white-space: nowrap;">100% private</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Theme toggle -->
-      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">
-        <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-        <span id="theme-label">Light mode</span>
-      </button>
-
-      <div class="privacy-badge">
-        <span>100% local &amp; private</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px;">
+        <div id="model-status-label" class="model-status-label" style="flex: 1; text-align: center; font-size: 11px; padding: 5px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: var(--text-2);" title="Active local model">Connecting...</div>
+        
+        <!-- Theme toggle icon button -->
+        <button id="theme-toggle-btn" onclick="toggleTheme()" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; transition: 0.15s; flex-shrink: 0;" title="Toggle theme" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+          <svg id="theme-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </div>
     </div>
   </aside>
@@ -960,7 +1168,7 @@
     <!-- Welcome screen -->
     <div id="welcome" class="welcome">
       <div class="welcome-top">
-        <div class="welcome-brand">Openarc<span>+</span></div>
+        <div class="welcome-brand">Openarc</div>
         <div class="welcome-greeting" id="greeting">Good morning</div>
         <div class="welcome-sub">How can I help you today?</div>
         <div class="input-box" style="width: min(600px, 92%); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
@@ -980,19 +1188,29 @@
               </div>
             </div>
             <div class="input-actions-right">
-              <button id="welcome-web-search-toggle" class="web-search-toggle" onclick="toggleWebSearch()" title="Web Search" style="background: none; border: none; cursor: pointer; color: var(--text-3); padding: 0 4px; display: flex; align-items: center; justify-content: center; height: 34px; transition: 0.15s; fill: none; stroke: currentColor;"><svg style="width: 16.5px; height: 16.5px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></button>
               <button class="send-btn" onclick="sendFromWelcome()"><svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
             </div>
           </div>
         </div>
-      </div>
-      <div class="welcome-bottom">
-        <div class="suggest-label">Suggestions</div>
-        <div class="suggestions">
-          <div class="suggest-pill" onclick="selectQuick('What can you help me with?')">What can you do?</div>
-          <div class="suggest-pill" onclick="selectQuick('Summarize the key points of machine learning in 5 lines')">Explain ML briefly</div>
-          <div class="suggest-pill" onclick="selectQuick('Write a Python function to sort a list of dictionaries by key: [key]')">Sort dictionaries in Python</div>
-          <div class="suggest-pill" onclick="selectQuick('Give me 5 productivity tips for a developer working on [stack]')">Dev productivity tips</div>
+        <!-- Suggestions row (aligned directly under the input box) -->
+        <div class="suggestions-row">
+          <div class="suggest-pill" onclick="selectQuick('Write a Python function to sort a list of dictionaries by key: [key]')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span>Coding</span>
+          </div>
+
+          <div class="suggest-pill" onclick="selectQuick('Search my uploaded data for: [query]')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Analyze data</span>
+          </div>
+          <div class="suggest-pill" onclick="selectQuick('Draft a professional email explaining [subject]')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span>Draft email</span>
+          </div>
+          <div class="suggest-pill" onclick="selectQuick('Explain the concept of [topic] in simple terms')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            <span>Explain concepts</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1015,9 +1233,18 @@
       <!-- File attachment preview -->
       <div id="file-preview" style="display: none; align-items: center; gap: 8px; padding: 6px 12px; background: var(--bg); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius-sm) var(--radius-sm) 0 0; margin-bottom: -1px; width: fit-content; font-size: 12px; color: var(--text-2); font-family: inherit;">
         <img id="preview-image" style="display: none; width: 30px; height: 30px; object-fit: cover; border-radius: 4px;" />
-        <span id="preview-icon" style="display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; stroke: var(--text-2);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+        <span id="preview-icon" style="display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; stroke: var(--text-2);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><rect x="8" y="12" width="8" height="6" rx="1"></rect><line x1="12" y1="12" x2="12" y2="18"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg></span>
         <span id="preview-filename">filename.txt</span>
+        <button id="visualize-btn" onclick="openVisualizerModal()" style="display: none; align-items: center; gap: 4px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 4px; color: #818cf8; font-size: 11px; font-weight: 600; padding: 2px 8px; cursor: pointer; margin-left: 8px; transition: 0.15s; border-style: solid;" onmouseover="this.style.background='rgba(99, 102, 241, 0.25)'" onmouseout="this.style.background='rgba(99, 102, 241, 0.15)'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 11.5px; height: 11.5px;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Visualize
+        </button>
         <button onclick="removeAttachment()" style="background: none; border: none; cursor: pointer; color: var(--text-3); font-size: 11px; margin-left: 4px;">✕</button>
+      </div>
+      <!-- RAG status badge -->
+      <div id="rag-status-badge" style="display: none; align-items: center; gap: 8px; padding: 6px 12px; background: var(--bg); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius-sm) var(--radius-sm) 0 0; margin-bottom: -1px; width: fit-content; font-size: 12px; color: var(--text-2); font-family: inherit;">
+        <span class="rag-pulse-dot"></span>
+        <span style="font-weight: 500;">Search Your Data Active (<span id="rag-badge-count">0</span> docs)</span>
       </div>
       <div class="input-box">
         <textarea id="user-input" rows="1"
@@ -1038,7 +1265,6 @@
             </div>
           </div>
           <div class="input-actions-right">
-            <button id="web-search-toggle" class="web-search-toggle" onclick="toggleWebSearch()" title="Web Search" style="background: none; border: none; cursor: pointer; color: var(--text-3); padding: 0 4px; display: flex; align-items: center; justify-content: center; height: 34px; transition: 0.15s; fill: none; stroke: currentColor;"><svg style="width: 16.5px; height: 16.5px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></button>
             <button class="send-btn" id="send-btn" onclick="sendMessage()"><svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
           </div>
         </div>
@@ -1054,35 +1280,95 @@
   <div class="modal" style="width: min(520px, 92vw);">
     <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">Settings</h2>
     <p style="font-size: 12.5px; color: var(--text-2); margin-bottom: 16px;">Configure your local assistant settings.</p>
-    
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">System Prompt</label>
-      <p style="font-size: 11.5px; color: var(--text-3); margin-bottom: 6px;">Give Openarc a personality or custom instructions.</p>
-      <textarea id="sys-input" placeholder="Example: You are a concise assistant. Always reply in bullet points. Use simple language." style="min-height: 80px;"></textarea>
+
+    <!-- Tabs Header -->
+    <div style="display: flex; gap: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; padding-bottom: 8px;">
+      <div id="tab-settings-btn" onclick="switchSettingsTab('settings')" style="cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-1); padding-bottom: 4px; border-bottom: 2px solid var(--text-1); transition: 0.15s;">General</div>
+      <div id="tab-about-btn" onclick="switchSettingsTab('about')" style="cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-3); padding-bottom: 4px; border-bottom: 2px solid transparent; transition: 0.15s;">About Openarc</div>
     </div>
     
-    <div style="margin-bottom: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
-      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Tavily API Key (for Web Search)</label>
-      <p style="font-size: 11.5px; color: var(--text-3); margin-bottom: 6px;">Get a free API key at <a href="https://tavily.com" target="_blank" style="color: #6366f1; text-decoration: none; font-weight: 500;">tavily.com</a> (1,000 queries/month free).</p>
-      <input type="password" id="tavily-key-input" placeholder="tvly-..." style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; font-family: inherit; padding: 8px 10px; outline: none; transition: border-color 0.15s;" onfocus="this.style.borderColor='var(--text-2)'" onblur="this.style.borderColor='var(--border)'" />
+    <!-- General Settings Tab Content -->
+    <div id="settings-tab-content">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">System Prompt</label>
+        <p style="font-size: 11.5px; color: var(--text-3); margin-bottom: 6px;">Give Openarc a personality or custom instructions.</p>
+        <textarea id="sys-input" placeholder="Example: You are a concise assistant. Always reply in bullet points. Use simple language." style="min-height: 80px;"></textarea>
+      </div>
+      
+      <div style="margin-bottom: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Ollama Server URL</label>
+        <p style="font-size: 11.5px; color: var(--text-3); margin-bottom: 6px;">Default is empty (uses this server). If your friend is sharing their Ollama via <a href="https://ngrok.com" target="_blank" style="color: #6366f1; text-decoration: none; font-weight: 500;">ngrok</a>, paste their Ollama ngrok URL here (e.g. <code style="font-size:11px;background:var(--bg-2);padding:1px 4px;border-radius:3px;">https://abc123.ngrok.io</code>).</p>
+        <input type="text" id="ollama-url-input" placeholder="https://abc123.ngrok.io  (leave empty for local)" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; font-family: inherit; padding: 8px 10px; outline: none; transition: border-color 0.15s;" onfocus="this.style.borderColor='var(--text-2)'" onblur="this.style.borderColor='var(--border)'" />
+      </div>
+
+
+
+      <div style="margin-bottom: 16px; border-top: 1px solid var(--border); padding-top: 16px; display: flex; gap: 16px;">
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Context Size (num_ctx)</label>
+          <p style="font-size: 11px; color: var(--text-3); margin-bottom: 6px;">Larger size lets the model remember longer chats.</p>
+          <select id="ctx-input" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; padding: 8px 10px; outline: none; transition: border-color 0.15s;" onfocus="this.style.borderColor='var(--text-2)'" onblur="this.style.borderColor='var(--border)'">
+            <option value="2048">2,048 tokens</option>
+            <option value="4096">4,096 tokens</option>
+            <option value="8192">8,192 tokens</option>
+            <option value="16384">16,384 tokens</option>
+            <option value="32768">32,768 tokens</option>
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Temperature: <span id="temp-val" style="color:#818cf8; font-weight:bold;">0.8</span></label>
+          <p style="font-size: 11px; color: var(--text-3); margin-bottom: 6px;">Higher temperature makes replies more creative.</p>
+          <input type="range" id="temp-input" min="0.1" max="1.2" step="0.1" value="0.8" style="width: 100%; accent-color: #818cf8; margin-top: 8px; cursor: pointer;" oninput="document.getElementById('temp-val').textContent=this.value" />
+        </div>
+      </div>
     </div>
 
-    <div style="margin-bottom: 16px; border-top: 1px solid var(--border); padding-top: 16px; display: flex; gap: 16px;">
-      <div style="flex: 1;">
-        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Context Size (num_ctx)</label>
-        <p style="font-size: 11px; color: var(--text-3); margin-bottom: 6px;">Larger size lets the model remember longer chats.</p>
-        <select id="ctx-input" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; padding: 8px 10px; outline: none; transition: border-color 0.15s;" onfocus="this.style.borderColor='var(--text-2)'" onblur="this.style.borderColor='var(--border)'">
-          <option value="2048">2,048 tokens</option>
-          <option value="4096">4,096 tokens</option>
-          <option value="8192">8,192 tokens</option>
-          <option value="16384">16,384 tokens</option>
-          <option value="32768">32,768 tokens</option>
-        </select>
+    <!-- About Tab Content -->
+    <div id="about-tab-content" style="display: none;">
+      <h3 style="font-size: 13.5px; font-weight: 700; color: var(--text-1); margin-bottom: 8px;">Our Privacy Mission</h3>
+      <p style="font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin-bottom: 12px;">
+        We believe in a future where artificial intelligence respects your digital autonomy. Openarc is built entirely around local privacy.
+      </p>
+      
+      <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px; box-shadow: var(--shadow);">
+        <p style="font-size: 12.5px; font-weight: 500; color: var(--text-1); line-height: 1.5; margin: 0; text-align: center; font-style: italic;">
+          "Providing free local AI with zero data training on your data, surveillance-free, with no third parties involved, and for the betterment of privacy."
+        </p>
       </div>
-      <div style="flex: 1;">
-        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Temperature: <span id="temp-val" style="color:#818cf8; font-weight:bold;">0.8</span></label>
-        <p style="font-size: 11px; color: var(--text-3); margin-bottom: 6px;">Higher temperature makes replies more creative.</p>
-        <input type="range" id="temp-input" min="0.1" max="1.2" step="0.1" value="0.8" style="width: 100%; accent-color: #818cf8; margin-top: 8px; cursor: pointer;" oninput="document.getElementById('temp-val').textContent=this.value" />
+      
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-2); line-height: 1.5; margin-bottom: 14px;">
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <span style="color: #4ade80; font-weight: bold;">-</span>
+          <span><strong>No Data Leakage:</strong> Your prompts, documents, and images never leave this machine. Zero external API calls.</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <span style="color: #4ade80; font-weight: bold;">-</span>
+          <span><strong>Zero Training:</strong> Local models do not upload or use your inputs to train or improve future model weights.</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <span style="color: #4ade80; font-weight: bold;">-</span>
+          <span><strong>Surveillance-Free:</strong> No analytics trackers, no user telemetry, and no diagnostic logs sent to servers.</span>
+        </div>
+      </div>
+
+      <h3 style="font-size: 13.5px; font-weight: 700; color: var(--text-1); margin-top: 18px; margin-bottom: 8px;">What's New (v2.1)</h3>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11.5px; color: var(--text-2); line-height: 1.45;">
+        <div style="display: flex; gap: 6px; align-items: flex-start;">
+          <span style="color: #6366f1;">•</span>
+          <span><strong>Self-Healing Table Rendering:</strong> The UI now dynamically intercepts and auto-corrects broken Markdown tables stream-by-stream, rendering them in a beautiful, styled table format.</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: flex-start;">
+          <span style="color: #6366f1;">•</span>
+          <span><strong>Lightweight Model Guard:</strong> When running smaller models (like Qwen 2.5 3B), the system prompt is automatically condensed to conserve context and prevent rule leakage.</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: flex-start;">
+          <span style="color: #6366f1;">•</span>
+          <span><strong>Ollama Auto-Reconnector:</strong> The backend now periodically polls for Ollama's availability, allowing the app to automatically load as soon as Ollama is launched.</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: flex-start;">
+          <span style="color: #6366f1;">•</span>
+          <span><strong>Absolute Local Privacy:</strong> Tavily Web Search has been completely removed to guarantee that all chat actions and documents stay 100% local and tracking-free.</span>
+        </div>
       </div>
     </div>
     
@@ -1093,36 +1379,89 @@
   </div>
 </div>
 
-<!-- Mission Modal -->
-<div class="overlay" id="mission-overlay" onclick="overlayMissionClick(event)">
-  <div class="modal" style="width: min(500px, 92vw);">
-    <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">
-      Our Mission
-    </h2>
-    <p style="font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin-bottom: 12px;">
-      We believe in a future where artificial intelligence respects your digital autonomy.
-    </p>
-    <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px; box-shadow: var(--shadow);">
-      <p style="font-size: 13px; font-weight: 500; color: var(--text-1); line-height: 1.5; margin: 0; text-align: center; font-style: italic;">
-        "Providing free local AI with zero data training on your data, surveillance-free, with no third parties involved, and for the betterment of privacy."
-      </p>
+<!-- Data Visualizer Modal -->
+<div class="overlay" id="visualizer-overlay" onclick="if (event.target === this) closeVisualizerModal()">
+  <div class="modal" style="width: min(450px, 92vw); text-align: left;">
+    <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">Data Visualizer</h2>
+    <p style="font-size: 12.5px; color: var(--text-2); margin-bottom: 16px;">Create graphs from your spreadsheet data without AI generation.</p>
+    
+    <div style="margin-bottom: 14px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Chart Type</label>
+      <select id="viz-type" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; padding: 8px 10px; outline: none;">
+        <option value="bar">Bar Chart</option>
+        <option value="line">Line Chart</option>
+        <option value="pie">Pie Chart</option>
+        <option value="doughnut">Doughnut Chart</option>
+      </select>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-2); line-height: 1.5; margin-bottom: 14px;">
-      <div style="display: flex; gap: 8px; align-items: flex-start;">
-        <span style="color: #4ade80; font-weight: bold;">-</span>
-        <span><strong>No Data Leakage:</strong> Your prompts, documents, and images never leave this machine. Zero external API calls.</span>
+
+    <div style="margin-bottom: 14px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">X-Axis (Labels Column)</label>
+      <select id="viz-x" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; padding: 8px 10px; outline: none;">
+      </select>
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px;">Y-Axis (Values Column)</label>
+      <select id="viz-y" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-1); font-size: 13px; padding: 8px 10px; outline: none;">
+      </select>
+    </div>
+
+    <div class="modal-actions" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+      <button class="btn-cancel" onclick="closeVisualizerModal()" style="margin:0;">Cancel</button>
+      <button class="btn-save" onclick="generateVisualizerChart()" style="margin:0;">Insert to Chat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Your Data Modal -->
+<div class="overlay" id="data-overlay" onclick="overlayDataClick(event)">
+  <div class="modal" style="width: min(520px, 92vw);">
+    <style>
+      .ios-switch { position: relative; display: inline-block; width: 32px; height: 18px; flex-shrink: 0; }
+      .ios-switch input { opacity: 0; width: 0; height: 0; }
+      .ios-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .2s; border-radius: 18px; }
+      .ios-slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .2s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+      .ios-switch input:checked + .ios-slider { background-color: #10a37f; }
+      .ios-switch input:checked + .ios-slider:before { transform: translateX(14px); }
+      .upload-btn-premium { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--text-1); border: none; border-radius: 6px; padding: 8px 12px; font-size: 12.5px; color: var(--bg); cursor: pointer; transition: 0.15s; font-weight: 500; font-family: inherit; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+      .upload-btn-premium:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+      #kb-list::-webkit-scrollbar { width: 3px; }
+      #kb-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+      <h2 style="font-size: 16px; font-weight: 700; margin: 0;">Your Data</h2>
+      <span id="kb-count-badge" style="font-size: 10px; background: var(--border-light); color: var(--text-2); padding: 2px 6px; border-radius: 12px; font-weight: 500; white-space: nowrap;">0 docs</span>
+    </div>
+    <p style="font-size: 12.5px; color: var(--text-2); margin-bottom: 16px;">Configure your local files and document indexing for RAG search.</p>
+
+    <!-- Toggle Switch Row -->
+    <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; margin-bottom: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--white)'" onmouseout="this.style.background='var(--bg)'">
+      <div style="display: flex; flex-direction: column; gap: 2px; text-align: left;">
+        <span style="font-size: 12.5px; color: var(--text-1); font-weight: 600;">Search Your Data</span>
+        <span style="font-size: 11px; color: var(--text-3);">Query uploaded documents for context in chats</span>
       </div>
-      <div style="display: flex; gap: 8px; align-items: flex-start;">
-        <span style="color: #4ade80; font-weight: bold;">-</span>
-        <span><strong>Zero Training:</strong> Local models do not upload or use your inputs to train or improve future model weights.</span>
+      <div class="ios-switch">
+        <input type="checkbox" id="rag-toggle" onchange="toggleRAG(this.checked)" />
+        <span class="ios-slider"></span>
       </div>
-      <div style="display: flex; gap: 8px; align-items: flex-start;">
-        <span style="color: #4ade80; font-weight: bold;">-</span>
-        <span><strong>Surveillance-Free:</strong> No analytics trackers, no user telemetry, and no diagnostic logs sent to servers.</span>
+    </label>
+
+    <!-- Document List Box -->
+    <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); margin-bottom: 16px; overflow: hidden;">
+      <div id="kb-list" style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 10px; scrollbar-width: thin;">
+        <div style="font-size: 11px; color: var(--text-3); text-align: center; padding: 12px 0;">No documents indexed</div>
       </div>
     </div>
-    <div class="modal-actions" style="margin-top: 12px;">
-      <button class="btn-save" onclick="closeMission()">Close</button>
+
+    <!-- Actions Row -->
+    <div class="modal-actions" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+      <button class="upload-btn-premium" onclick="triggerKbFileInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add Document
+      </button>
+      <input type="file" id="kb-file-input" style="display: none;" onchange="handleKbFileSelect(event)" accept=".png,.jpg,.jpeg,.pdf,.txt,.md,.log,.csv,.json,.xls,.xlsx,.py,.js,.html,.css,.xml,.yml,.yaml,.java,.c,.cpp,.h,.ts,.jsx,.tsx,.sh,.bat,.ps1,.sql,.r,.go,.rs,.rb,.php" />
+      <button class="btn-cancel" onclick="closeDataModal()" style="margin: 0; padding: 8px 16px;">Close</button>
     </div>
   </div>
 </div>
@@ -1131,15 +1470,20 @@
 
 <script>
 // ── State ─────────────────────────────────────────────
-const OLLAMA   = (window.location.protocol === 'http:' || window.location.protocol === 'https:') ? '' : 'http://127.0.0.1:11434';
+// Auto-detect if running remotely (via ngrok) and use built-in proxy
+const isRemote = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+let OLLAMA = localStorage.getItem('oa_ollama_url') || (isRemote ? '' : (window.location.protocol === 'https:' ? '' : 'http://127.0.0.1:11434'));
+// When remote and no custom URL set, all /api/ollama/* calls go through the Node proxy automatically
+let OLLAMA_API = isRemote && !localStorage.getItem('oa_ollama_url') ? '/api/ollama' : OLLAMA;
 let chats      = JSON.parse(localStorage.getItem('oa_chats') || '{}');
 let currentId  = null;
 let streaming  = false;
 let ctrl       = null;
 let sysprompt  = localStorage.getItem('oa_sys') || '';
-let tavilyKey  = localStorage.getItem('oa_tavily_key') || '';
-let webSearchEnabled = localStorage.getItem('oa_web_search') === 'true';
+let webSearchEnabled = false;
+let ragEnabled = localStorage.getItem('oa_rag_enabled') === 'true';
 let attachedFile = null;
+let lastSearchSources = null;
 let temp = parseFloat(localStorage.getItem('oa_temp') || '0.8');
 let isLoadingChat = false;
 let storedCtx = localStorage.getItem('oa_num_ctx');
@@ -1152,26 +1496,72 @@ let maxChars = numCtx * 4;
 
 // ── Boot ──────────────────────────────────────────────
 window.onload = async () => {
-  setGreeting();
-  loadModels();
-  renderHistory();
-  document.getElementById('sys-input').value = sysprompt;
-  document.getElementById('tavily-key-input').value = tavilyKey;
-  document.getElementById('ctx-input').value = numCtx;
-  document.getElementById('temp-input').value = temp;
-  document.getElementById('temp-val').textContent = temp;
-  updateSearchToggleUI();
-  
-  cleanEmptyChats();
-  const hasChats = Object.keys(chats).length > 0;
-  if (hasChats) {
-    const ids = Object.keys(chats);
-    loadChat(ids[ids.length - 1]);
-  } else {
-    showEmptyState();
+  // Start server status polling immediately so the UI loader is alive and reporting
+  pollServerStatus();
+
+  try {
+    setGreeting();
+    renderHistory();
+    document.getElementById('sys-input').value = sysprompt;
+    document.getElementById('ollama-url-input').value = localStorage.getItem('oa_ollama_url') || '';
+    document.getElementById('ctx-input').value = numCtx;
+    document.getElementById('temp-input').value = temp;
+    document.getElementById('temp-val').textContent = temp;
+
+    
+    // RAG Init
+    const ragCheckbox = document.getElementById('rag-toggle');
+    if (ragCheckbox) ragCheckbox.checked = ragEnabled;
+    loadKbDocuments();
+    
+    cleanEmptyChats();
+    const hasChats = Object.keys(chats).length > 0;
+    if (hasChats) {
+      const ids = Object.keys(chats);
+      loadChat(ids[ids.length - 1]);
+    } else {
+      showEmptyState();
+    }
+    initTheme();
+  } catch (err) {
+    console.error('Initialization error:', err);
   }
-  initTheme();
 };
+
+async function pollServerStatus() {
+  const overlay = document.getElementById('startup-overlay');
+  const title = document.getElementById('startup-title');
+  const subtitle = document.getElementById('startup-subtitle');
+  
+  const check = async () => {
+    try {
+      const res = await fetch('/api/status');
+      if (!res.ok) throw new Error();
+      const statusData = await res.json();
+      
+      if (statusData.status === 'ready') {
+        overlay.classList.add('hidden');
+        loadModels();
+        clearInterval(pollInterval);
+      } else if (statusData.status === 'checking') {
+        title.textContent = 'Verifying private local models...';
+        subtitle.textContent = 'Checking local files for Qwen 2.5 and Llava Vision.';
+      } else if (statusData.status === 'downloading') {
+        title.textContent = 'Optimizing your private AI...';
+        subtitle.textContent = `Downloading optimized model: ${statusData.model} (this only happens on the first run).`;
+      } else if (statusData.status === 'ollama_offline') {
+        title.textContent = 'Waiting for Local AI Engine...';
+        subtitle.textContent = 'Connecting to local Ollama service. Please make sure Ollama is open and running on your PC.';
+      }
+    } catch (err) {
+      title.textContent = 'Booting Private Agent...';
+      subtitle.textContent = 'Waiting for Node.js backend server to initialize.';
+    }
+  };
+  
+  const pollInterval = setInterval(check, 1500);
+  check();
+}
 
 function setGreeting() {
   const h = new Date().getHours();
@@ -1221,10 +1611,11 @@ function closeSidebar() {
 }
 
 // ── Models ────────────────────────────────────────────
-let activeModel = localStorage.getItem('oa_active_model') || 'llama3.2:latest';
+let activeModel = localStorage.getItem('oa_active_model') || 'qwen2.5:latest';
 let visionModel = '';
 
 function isVisionCapable(name) {
+  if (!name) return false;
   const n = name.toLowerCase();
   return n.includes('llava') || n.includes('minicpm-v') || n.includes('minicpm_v') ||
          n.includes('bakllava') || n.includes('vision') || n.includes('moondream') ||
@@ -1233,7 +1624,7 @@ function isVisionCapable(name) {
 
 async function loadModels() {
   try {
-    const r = await fetch(`${OLLAMA}/api/tags`);
+    const r = await fetch(`${OLLAMA_API}/api/tags`);
     const d = await r.json();
     
     const menu = document.getElementById('model-dropdown-menu');
@@ -1253,14 +1644,14 @@ async function loadModels() {
     // Detect the best vision model available
     const visionModels = d.models.filter(m => isVisionCapable(m.name));
     if (visionModels.length) {
-      const preferLlava = visionModels.find(m => m.name.toLowerCase().includes('llava'));
       const preferMinicpm = visionModels.find(m => m.name.toLowerCase().includes('minicpm'));
-      visionModel = (preferLlava || preferMinicpm || visionModels[0]).name;
+      const preferLlava = visionModels.find(m => m.name.toLowerCase().includes('llava'));
+      visionModel = (preferMinicpm || preferLlava || visionModels[0]).name;
     } else {
       visionModel = '';
     }
     
-    // Check if previously active model still exists, otherwise auto-select best text model
+    // Check if previously active model still exists, otherwise auto-select best text model (Qwen 2.5 -> Llama 3.1 -> Fallbacks)
     const savedModel = localStorage.getItem('oa_active_model');
     const modelExists = savedModel && d.models.some(m => m.name === savedModel);
     
@@ -1268,9 +1659,13 @@ async function loadModels() {
       activeModel = savedModel;
     } else {
       const textModels = d.models.filter(m => !isVisionCapable(m.name));
-      const hasLlama32 = textModels.find(m => m.name.startsWith('llama3.2'));
-      if (hasLlama32) {
-        activeModel = hasLlama32.name;
+      const hasQwen = textModels.find(m => m.name.toLowerCase().startsWith('qwen2.5'));
+      const hasLlama31 = textModels.find(m => m.name.toLowerCase().startsWith('llama3.1'));
+      
+      if (hasQwen) {
+        activeModel = hasQwen.name;
+      } else if (hasLlama31) {
+        activeModel = hasLlama31.name;
       } else if (textModels.length) {
         activeModel = textModels[0].name;
       } else {
@@ -1279,14 +1674,51 @@ async function loadModels() {
       localStorage.setItem('oa_active_model', activeModel);
     }
     
+    function getModelDescription(name) {
+      const n = name.toLowerCase();
+      if (n.startsWith('qwen2.5') && n.includes('3b')) {
+        return "Fastest local text model for writing & everyday tasks";
+      }
+      if (n.startsWith('qwen')) {
+        return "Balanced model for coding & complex reasoning";
+      }
+      if (n.includes('llama3.2') && n.includes('vision')) {
+        return "Llama multimodal model for vision & text";
+      }
+      if (n.includes('llama3.2')) {
+        return "Efficient lightweight model for quick answers";
+      }
+      if (n.includes('llama')) {
+        return "Robust general intelligence model";
+      }
+      if (n.includes('llava')) {
+        return "Vision model for parsing images offline";
+      }
+      if (n.includes('minicpm')) {
+        return "Multimodal model for OCR & detailed vision";
+      }
+      return "Local intelligence model";
+    }
+
     // Populate dropdown menu items for both menus
     d.models.forEach(m => {
-      const desc = isVisionCapable(m.name) ? ' <span style="font-size:9.5px; opacity:0.65; background:rgba(99,102,241,0.25); padding:1px 4px; border-radius:3px; color:#818cf8; font-weight:600;">Vision</span>' : '';
+      const badge = isVisionCapable(m.name) ? '<span style="font-size:9px; opacity:0.85; background:rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.3); padding:1px 4.5px; border-radius:3px; color:#818cf8; font-weight:600; margin-left: 6px; flex-shrink:0;">Vision</span>' : '';
+      const modelDesc = getModelDescription(m.name);
+      
+      const itemContent = `
+        <div style="display: flex; flex-direction: column; gap: 3.5px; width: 100%; text-align: left;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span class="model-name-title" style="font-size: 12px; font-weight: 600; color: inherit;">${m.name}</span>
+            ${badge}
+          </div>
+          <span class="model-desc" style="font-size: 10px; color: var(--text-3); font-weight: 400; line-height: 1.35; white-space: normal; display: block;">${modelDesc}</span>
+        </div>
+      `;
       
       if (menu) {
         const item = document.createElement('div');
         item.className = 'model-dropdown-item' + (m.name === activeModel ? ' active' : '');
-        item.innerHTML = `<span>${m.name}</span>${desc}`;
+        item.innerHTML = itemContent;
         item.onclick = () => selectModel(m.name);
         menu.appendChild(item);
       }
@@ -1294,7 +1726,7 @@ async function loadModels() {
       if (welcomeMenu) {
         const item = document.createElement('div');
         item.className = 'model-dropdown-item' + (m.name === activeModel ? ' active' : '');
-        item.innerHTML = `<span>${m.name}</span>${desc}`;
+        item.innerHTML = itemContent;
         item.onclick = () => selectModel(m.name);
         welcomeMenu.appendChild(item);
       }
@@ -1319,6 +1751,14 @@ async function loadModels() {
 function selectModel(name) {
   activeModel = name;
   localStorage.setItem('oa_active_model', name);
+  
+  if (!isVisionCapable(name)) {
+    localStorage.removeItem('oa_prev_active_model');
+    if (attachedFile && attachedFile.type === 'image') {
+      removeAttachment();
+      toast(`Switched to text model '${name}' (image removed).`);
+    }
+  }
   
   const label = document.getElementById('model-status-label');
   if (label) {
@@ -1401,7 +1841,7 @@ function toggleWelcomeModelDropdown(e) {
 }
 
 // Close dropdown on click outside
-window.addEventListener('click', () => {
+window.addEventListener('click', (e) => {
   ['model-dropdown-menu', 'welcome-model-dropdown-menu'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('show');
@@ -1409,6 +1849,12 @@ window.addEventListener('click', () => {
   ['model-select-btn', 'welcome-model-select-btn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('open');
+  });
+  // Close sources details elements
+  document.querySelectorAll('details.sources-details').forEach(details => {
+    if (!details.contains(e.target)) {
+      details.removeAttribute('open');
+    }
   });
 });
 
@@ -1451,11 +1897,11 @@ function loadChat(id) {
   showChatUI();
   document.getElementById('messages').innerHTML = '';
   isLoadingChat = true;
-  chat.messages.forEach(m => { if (m.role!=='system') appendMsg(m.role, m.content, false, m.images, m.metrics); });
+  chat.messages.forEach(m => { if (m.role!=='system') appendMsg(m.role, m.content, false, m.images, m.metrics, m.prompt, m.sources); });
   isLoadingChat = false;
   document.getElementById('chat-title').textContent = chat.title;
   document.getElementById('chat-sub').textContent = `${chat.messages.filter(m=>m.role!=='system').length} messages`;
-  scrollBottom();
+  scrollBottom(true);
   renderHistory();
 }
 
@@ -1541,6 +1987,26 @@ function sendQuick(t) { initChatIfNeeded(); showWelcome(); }
 function selectQuick(t) {
   initChatIfNeeded();
   showChatUI();
+  
+  // Auto-enable/disable web search and RAG based on the selected prompt
+  if (t.includes('Search the web')) {
+    if (!webSearchEnabled) {
+      toggleWebSearch();
+    }
+    if (ragEnabled) {
+      toggleRAG(false);
+    }
+  } else if (t.includes('Search my uploaded data')) {
+    if (!ragEnabled) {
+      toggleRAG(true);
+    }
+  } else {
+    // Normal prompt, disable both tools if they are enabled
+    if (ragEnabled) {
+      toggleRAG(false);
+    }
+  }
+
   const input = document.getElementById('user-input');
   input.value = t;
   autoResize(input);
@@ -1590,138 +2056,261 @@ function isCasualOrGreeting(text) {
   return false;
 }
 
+
+function resetSendButton() {
+  streaming = false;
+  ctrl = null;
+  const btn = document.getElementById('send-btn');
+  if (btn) {
+    btn.innerHTML = `<svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`;
+    btn.classList.remove('stop-btn');
+  }
+}
+
 function handleKey(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
 async function sendMessage() {
   if (streaming) { stopStream(); return; }
   const input = document.getElementById('user-input');
   let t = input.value.trim();
   if (!t && !attachedFile) return;
-  if (!getModel()) return;
-  
-  let imagesToSend = null;
-  let useVisionModel = false;
-  
-  if (attachedFile) {
-    if (attachedFile.type === 'image') {
-      if (!visionModel) {
-        toast('No vision model installed. Run: ollama pull llava — then refresh.', 6000);
-        return;
-      }
-      // Auto-switch to vision model for this image request
-      useVisionModel = true;
-      imagesToSend = attachedFile.images || [attachedFile.base64];
-      
-      const defaultPrompt = 'Describe this image.';
-      const promptText = t.trim() || defaultPrompt;
-      
-      initChatIfNeeded();
-      showChatUI();
-      input.value = ''; autoResize(input);
-      removeAttachment();
-      sendText(promptText, imagesToSend, useVisionModel);
-      return;
-    } else {
-      let content = attachedFile.content;
-      if (content.length > maxChars) {
-        content = content.substring(0, maxChars) + `\n\n... [Content truncated to stay within Openarc's ${numCtx}-token context window limit] ...\n\n`;
-        toast(`File content truncated to stay within the local model's ${numCtx}-token memory limit.`, 4500);
-      }
-      const userQuestion = t.trim();
-      // What goes to the model (full content)
-      const defaultInstruction = `Read this document and do two things only: first give a short summary of what it is about, then explain the key points clearly in simple language. Do not ask any follow-up questions. Do not ask for permission to begin. Just read and explain directly.`;
-      const fullPrompt = `I have attached a document named "${attachedFile.name}". Read it carefully and help the user understand it.\n\nDocument content:\n\n---\n${content}\n---\n\n${userQuestion ? userQuestion : defaultInstruction}`;
-      // What shows in the chat bubble (clean badge + question)
-      const displayText = `__FILE__${attachedFile.name}__${userQuestion}`;
-      
-      initChatIfNeeded();
-      showChatUI();
-      input.value = ''; autoResize(input);
-      removeAttachment();
-      sendText(fullPrompt, imagesToSend, useVisionModel, displayText);
-      return;
-    }
-  }
-  
-  if (webSearchEnabled && t && !attachedFile && !isCasualOrGreeting(t)) {
-    if (!tavilyKey) {
-      toast('Tavily API Key is missing! Add it in Settings.', 4000);
-      openSettings();
-      return;
-    }
-    
-    toast('Searching the web...');
-    let searchQuery = t;
-    const userMsgs = chats[currentId] ? chats[currentId].messages.filter(m => m.role === 'user') : [];
-    if (userMsgs.length > 0 && t.length < 45) {
-      const lastUserMsg = userMsgs[userMsgs.length - 1];
-      let lastContent = lastUserMsg.content || '';
-      if (lastContent.startsWith('__SEARCH__')) lastContent = lastContent.slice(10);
-      if (lastContent.startsWith('__FILE__')) {
-        const rest = lastContent.slice(8);
-        const sepIdx = rest.indexOf('__');
-        lastContent = rest.substring(sepIdx + 2);
-      }
-      if (lastContent.trim()) {
-        searchQuery = `${lastContent.trim()} ${t}`;
-      }
-    }
-    const results = await fetchSearchResults(searchQuery);
-    
-    if (results && results.length > 0) {
-      const searchContext = results.map(r => `Title: ${r.title}\nURL: ${r.url}\nContent: ${r.content}`).join('\n\n');
-      const fullPrompt = `Real-time Web Search Results Context:
----
-${searchContext}
----
 
-Using the real-time search results above, answer the user's question. If the search results contain the answer, you must use it to answer the question, even if it contradicts your offline training data cutoff. Do not mention that your training data is limited or cutoff when you have search results.
+  // Web Search Offline Intercept
+  const isWebSearch = t.toLowerCase().startsWith('/web ') || t.toLowerCase() === '/web';
+  if (isWebSearch && !navigator.onLine) {
+    toast("Please check your device has active internet connection", 4000);
+    return;
+  }
+
+  if (!getModel()) return;
+
+  // Change send button to stop button immediately
+  streaming = true;
+  ctrl = new AbortController();
+  const btn = document.getElementById('send-btn');
+  if (btn) {
+    btn.innerHTML = `<svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M6 19h12V5H6v14z"/></svg>`;
+    btn.classList.add('stop-btn');
+  }
+
+  // Clear input box and resize immediately so text "goes up"
+  input.value = '';
+  autoResize(input);
+
+  // We need to keep a copy of the attached file info because we will clear it
+  const currentAttachedFile = attachedFile ? { ...attachedFile } : null;
+  removeAttachment();
+
+  initChatIfNeeded();
+  showChatUI();
+
+  try {
+    // Append the message bubble immediately before starting RAG or direct LLM query
+    if (currentAttachedFile) {
+      if (currentAttachedFile.type === 'image') {
+        const defaultPrompt = 'Describe this image.';
+        const promptText = t || defaultPrompt;
+        appendMsg('user', promptText, false, [currentAttachedFile.base64], null, null);
+      } else {
+        const displayText = `__FILE__${currentAttachedFile.name}__${t}`;
+        appendMsg('user', displayText, false, null, null, t);
+      }
+    } else if (ragEnabled && !isCasualOrGreeting(t)) {
+      const displayText = `__RAG__${t}`;
+      appendMsg('user', displayText, false, null, null, t);
+    } else {
+      appendMsg('user', t, false, null, null, null);
+    }
+
+    // Set title if it is the first message
+    if (chats[currentId].messages.filter(m=>m.role!=='system').length===1) {
+      let titleText = t || (currentAttachedFile ? (currentAttachedFile.type === 'image' ? 'Image Upload' : currentAttachedFile.name) : 'New Chat');
+      chats[currentId].title = titleText.slice(0,40) + (titleText.length>40?'…':'');
+      document.getElementById('chat-title').textContent = chats[currentId].title;
+      renderHistory();
+    }
+
+    // 2. Perform background processing (RAG or direct LLM query)
+    let promptToSend = t;
+    let useVisionModel = false;
+    let imagesToSend = null;
+
+    if (currentAttachedFile) {
+      if (currentAttachedFile.type === 'image') {
+        if (!visionModel) {
+          toast('No vision model installed. Run: ollama pull llava — then refresh.', 6000);
+          resetSendButton();
+          return;
+        }
+        useVisionModel = true;
+        imagesToSend = currentAttachedFile.images || [currentAttachedFile.base64];
+        promptToSend = t || 'Describe this image.';
+      } else if (currentAttachedFile.type === 'database') {
+        const userQ = t ? t : "Analyze this database and summarize its contents.";
+        toast('Running SQL Database Interpreter...', 4000);
+        try {
+          const res = await fetch('/api/interpreter/sql', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename: currentAttachedFile.name,
+              base64: currentAttachedFile.base64,
+              question: userQ,
+              model: activeModel
+            }),
+            signal: ctrl.signal
+          });
+          const data = await res.json();
+          if (res.status === 200 && data.result) {
+            promptToSend = `Database SQL Analysis Results for "${currentAttachedFile.name}":\n\n${data.result}\n\nUser Request: ${userQ}\n\nPlease summarize the above SQL analysis results clearly for the user.`;
+          } else {
+            throw new Error(data.error || "Failed to analyze database.");
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') throw err;
+          toast("Database query failed.", 4000);
+          const dbErr = new Error("Database query failed: " + err.message);
+          dbErr.name = 'SearchError'; // reuse SearchError to safely abort UI bubble
+          throw dbErr;
+        }
+      } else {
+        let content = currentAttachedFile.content;
+        const defaultInstruction = `Read this document and do two things only: first give a short summary of what it is about, then explain the key points clearly in simple language. Do not ask any follow-up questions. Do not ask for permission to begin. Just read and explain directly.`;
+        const userQ = t ? t : defaultInstruction;
+        const wantsChart = /chart|graph|plot|visualize/i.test(userQ);
+        const isDataFile = /\.(csv|xlsx|xls)$/i.test(currentAttachedFile.name);
+
+        if (wantsChart && isDataFile) {
+          toast('Running robust data interpreter...', 3000);
+          try {
+            const res = await fetch('/api/interpreter/inline', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                filename: currentAttachedFile.name,
+                content: currentAttachedFile.content,
+                question: userQ,
+                model: activeModel
+              }),
+              signal: ctrl.signal
+            });
+            const data = await res.json();
+            if (data.result && !data.error) {
+              content = "Computed Aggregate Summary:\n" + data.result;
+            }
+          } catch (err) {
+            console.error("Data interpreter inline failed", err);
+          }
+        }
+
+        if (content.length > maxChars) {
+          content = content.substring(0, maxChars) + `\n\n... [Content truncated to stay within Openarc's ${numCtx}-token context window limit] ...\n\n`;
+          toast(`File content truncated to stay within the local model's ${numCtx}-token memory limit.`, 4500);
+        }
+
+        promptToSend = `Dataset Name: "${currentAttachedFile.name}"\n\nData:\n---\n${content}\n---\n\nUser Request: ${userQ}`;
+        
+        if (wantsChart) {
+          promptToSend += `\n\nIMPORTANT: You must fulfill the user's request. Output a valid \`\`\`chart JSON block based on the data above. Do NOT refuse or give instructions on how to do it in Excel. To ensure valid JSON output, aggregate the data if necessary and plot a maximum of 10 items.`;
+        }
+        
+        // Update the prompt in stored message since we modified the prompt
+        const userMsgs = chats[currentId].messages.filter(m => m.role === 'user');
+        if (userMsgs.length > 0) {
+          userMsgs[userMsgs.length - 1].prompt = promptToSend;
+          saveChats();
+        }
+      }
+    } else if (isWebSearch) {
+      toast('Searching the web...');
+      const cleanRequest = t.substring(4).trim() || "What is happening in the news today?";
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request: cleanRequest, history: chats[currentId].messages || [], model: activeModel }),
+          signal: ctrl.signal
+        });
+        const data = await res.json();
+        
+        if (res.status === 200 && data.context) {
+          promptToSend = `Below is real-time context retrieved from the web regarding the user's question. Use this context to formulate a comprehensive answer. Be sure to cite the sources provided.
+
+Context:
+=========================================
+${data.context}
+=========================================
+
+User Question: ${cleanRequest}`;
+
+          // Update the stored prompt
+          const userMsgs = chats[currentId].messages.filter(m => m.role === 'user');
+          if (userMsgs.length > 0) {
+            userMsgs[userMsgs.length - 1].prompt = promptToSend;
+            saveChats();
+          }
+        } else {
+           throw new Error(data.error || "Failed to search the web.");
+        }
+      } catch (err) {
+         if (err.name === 'AbortError') throw err;
+         toast("Web search failed. Please check your internet connection.", 5000);
+         const searchErr = new Error("Web search failed: " + err.message);
+         searchErr.name = 'SearchError';
+         throw searchErr;
+      }
+    } else if (ragEnabled && !isCasualOrGreeting(t)) {
+      toast('Retrieving relevant local document context...');
+      const res = await fetch('/api/rag/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: t, topK: 5, model: activeModel }),
+        signal: ctrl.signal
+      });
+      const data = await res.json();
+      const results = data.results || [];
+      
+      if (results && results.length > 0) {
+        const contextText = results.map(r => `[Source: ${r.filename}, Chunk ${r.chunkIndex + 1}]\n${r.text}`).join('\n\n---\n\n');
+        promptToSend = `Below is the relevant context retrieved from your local data. Use this context to answer the user's question. If the context does not contain enough information to answer, state that the context is insufficient but answer using your existing knowledge if possible.
+        
+Context:
+=========================================
+${contextText}
+=========================================
 
 User Question: ${t}`;
 
-      const displayText = `__SEARCH__${t}`;
-      
-      initChatIfNeeded();
-      showChatUI();
-      input.value = ''; autoResize(input);
-      removeAttachment();
-      sendText(fullPrompt, imagesToSend, useVisionModel, displayText);
-      return;
-    } else {
-      toast('No search results found. Answering from local knowledge.', 3000);
+        // Update the stored prompt
+        const userMsgs = chats[currentId].messages.filter(m => m.role === 'user');
+        if (userMsgs.length > 0) {
+          userMsgs[userMsgs.length - 1].prompt = promptToSend;
+          saveChats();
+        }
+      }
     }
-  }
-  
-  initChatIfNeeded();
-  showChatUI();
-  input.value = ''; autoResize(input);
-  removeAttachment();
-  sendText(t, imagesToSend, useVisionModel);
-}
 
-async function fetchSearchResults(query) {
-  try {
-    const response = await fetch('/api/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        query: query,
-        apiKey: tavilyKey
-      })
-    });
-    
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP error ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.results || [];
+    await streamReply(useVisionModel);
+
   } catch (err) {
-    console.error('Search error:', err);
-    toast(`Web Search failed: ${err.message}`, 5000);
-    return null;
+    if (err.name === 'AbortError' || err.name === 'SearchError') {
+      console.log('Operation aborted or search failed.');
+      if (err.name === 'AbortError') toast('Operation cancelled.');
+      // Remove the aborted user message from history
+      if (currentId && chats[currentId] && chats[currentId].messages.length > 0) {
+        chats[currentId].messages.pop();
+        saveChats();
+        renderHistory();
+        // Remove the user message bubble from UI
+        const userRows = document.querySelectorAll('.msg-row.user');
+        if (userRows.length > 0) {
+          userRows[userRows.length - 1].remove();
+        }
+      }
+    } else {
+      console.error(err);
+      toast(`Error: ${err.message}`, 4000);
+    }
+    resetSendButton();
   }
 }
 
@@ -1735,9 +2324,10 @@ function handleFileSelect(e) {
   if (!file) return;
   
   const ext = file.name.split('.').pop().toLowerCase();
-  const sizeLimit = ext === 'xlsx' || ext === 'xls' ? 50 * 1024 * 1024 : 25 * 1024 * 1024;
+  const isDb = ext === 'db' || ext === 'sqlite' || ext === 'sqlite3';
+  const sizeLimit = ext === 'xlsx' || ext === 'xls' || isDb ? 50 * 1024 * 1024 : 25 * 1024 * 1024;
   if (file.size > sizeLimit) {
-    const sizeLimitText = ext === 'xlsx' || ext === 'xls' ? '50MB' : '25MB';
+    const sizeLimitText = ext === 'xlsx' || ext === 'xls' || isDb ? '50MB' : '25MB';
     toast(`File too large! Maximum allowed size for this type is ${sizeLimitText}.`, 4000);
     e.target.value = '';
     return;
@@ -1762,6 +2352,14 @@ function handleFileSelect(e) {
       document.getElementById('preview-icon').style.display = 'none';
       document.getElementById('preview-filename').textContent = file.name;
       document.getElementById('file-preview').style.display = 'flex';
+      
+      if (visionModel) {
+        if (!isVisionCapable(activeModel)) {
+          localStorage.setItem('oa_prev_active_model', activeModel);
+        }
+        selectModel(visionModel);
+      }
+      
       checkWelcomeTransition();
     };
     reader.onerror = function() {
@@ -1802,9 +2400,14 @@ function handleFileSelect(e) {
           return;
         }
         
+        const firstSheetName = workbook.SheetNames[0];
+        const firstSheet = workbook.Sheets[firstSheetName];
+        const parsedRows = XLSX.utils.sheet_to_json(firstSheet);
+        
         attachedFile = {
           name: file.name,
-          content: fullText
+          content: fullText,
+          parsedData: parsedRows
         };
         
         // Show green spreadsheet icon
@@ -1813,6 +2416,10 @@ function handleFileSelect(e) {
         document.getElementById('preview-image').style.display = 'none';
         document.getElementById('preview-filename').textContent = file.name;
         document.getElementById('file-preview').style.display = 'flex';
+        
+        const vizBtn = document.getElementById('visualize-btn');
+        if (vizBtn) vizBtn.style.display = 'inline-flex';
+        
         toast(`Parsed ${workbook.SheetNames.length} sheet(s) from spreadsheet.`, 3000);
         checkWelcomeTransition();
       } catch (err) {
@@ -1839,22 +2446,98 @@ function handleFileSelect(e) {
       return;
     }
     
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      attachedFile = {
-        name: file.name,
-        content: evt.target.result
+    if (ext === 'csv') {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        let rawText = evt.target.result;
+        const lines = rawText.split('\n').map(line => line.trim()).filter(line => line);
+        if (lines.length > 0) {
+          const header = lines[0].split(',');
+          const uselessColumns = ['legacy order id', 'payout id', 'payout date', 'payout status', 'payout method', 'transaction id', 'item id', 'reference id', 'reason for hold'];
+          const keepIndices = [];
+          const cleanHeader = [];
+          header.forEach((h, idx) => {
+            const hClean = h.trim().replace(/^"|"$/g, '').toLowerCase();
+            if (!uselessColumns.includes(hClean)) {
+              keepIndices.push(idx);
+              cleanHeader.push(h.trim().replace(/^"|"$/g, ''));
+            }
+          });
+          
+          let cleanLines = [cleanHeader.join(',')];
+          const rowsToKeep = lines.slice(1, 101);
+          rowsToKeep.forEach(line => {
+            const cols = line.split(',');
+            const cleanCols = keepIndices.map(idx => (cols[idx] || '').trim().replace(/^"|"$/g, ''));
+            cleanLines.push(cleanCols.join(','));
+          });
+          
+          let compressedText = cleanLines.join('\n');
+          let parsedRows = [];
+          try {
+            const workbook = XLSX.read(compressedText, { type: 'string' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            parsedRows = XLSX.utils.sheet_to_json(firstSheet);
+          } catch (e) {
+            console.error(e);
+          }
+          
+          attachedFile = {
+            name: file.name,
+            content: compressedText,
+            parsedData: parsedRows
+          };
+          if (lines.length > 101) {
+            toast(`CSV optimized & limited to 100 rows for lightning-fast responses.`, 4000);
+          }
+        } else {
+          let parsedRows = [];
+          try {
+            const workbook = XLSX.read(rawText, { type: 'string' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            parsedRows = XLSX.utils.sheet_to_json(firstSheet);
+          } catch (e) {
+            console.error(e);
+          }
+          
+          attachedFile = {
+            name: file.name,
+            content: rawText,
+            parsedData: parsedRows
+          };
+        }
+        
+        document.getElementById('preview-filename').textContent = file.name;
+        document.getElementById('file-preview').style.display = 'flex';
+        
+        const vizBtn = document.getElementById('visualize-btn');
+        if (vizBtn) vizBtn.style.display = 'inline-flex';
+        
+        checkWelcomeTransition();
       };
-      
-      document.getElementById('preview-filename').textContent = file.name;
-      document.getElementById('file-preview').style.display = 'flex';
-      checkWelcomeTransition();
-    };
-    reader.onerror = function() {
-      toast('Failed to read file.', 3000);
-      e.target.value = '';
-    };
-    reader.readAsText(file);
+      reader.onerror = function() {
+        toast('Failed to read file.', 3000);
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        attachedFile = {
+          name: file.name,
+          content: evt.target.result
+        };
+        
+        document.getElementById('preview-filename').textContent = file.name;
+        document.getElementById('file-preview').style.display = 'flex';
+        checkWelcomeTransition();
+      };
+      reader.onerror = function() {
+        toast('Failed to read file.', 3000);
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    }
   }
 }
 
@@ -1865,6 +2548,121 @@ function removeAttachment() {
   document.getElementById('preview-image').style.display = 'none';
   document.getElementById('preview-image').src = '';
   document.getElementById('preview-icon').style.display = 'flex';
+  
+  const vizBtn = document.getElementById('visualize-btn');
+  if (vizBtn) vizBtn.style.display = 'none';
+  
+  const prev = localStorage.getItem('oa_prev_active_model');
+  if (prev) {
+    selectModel(prev);
+    localStorage.removeItem('oa_prev_active_model');
+  }
+}
+
+// ── Interactive Data Visualizer Modal Functions ───────────
+function openVisualizerModal() {
+  if (!attachedFile || !attachedFile.parsedData || attachedFile.parsedData.length === 0) {
+    toast('No spreadsheet data available to visualize.');
+    return;
+  }
+  
+  const cols = Object.keys(attachedFile.parsedData[0]);
+  
+  const selectX = document.getElementById('viz-x');
+  const selectY = document.getElementById('viz-y');
+  selectX.innerHTML = '';
+  selectY.innerHTML = '';
+  
+  cols.forEach(col => {
+    const optX = document.createElement('option');
+    optX.value = col;
+    optX.textContent = col;
+    selectX.appendChild(optX);
+    
+    const optY = document.createElement('option');
+    optY.value = col;
+    optY.textContent = col;
+    selectY.appendChild(optY);
+  });
+  
+  document.getElementById('visualizer-overlay').classList.add('open');
+}
+
+function closeVisualizerModal() {
+  document.getElementById('visualizer-overlay').classList.remove('open');
+}
+
+function generateVisualizerChart() {
+  const chartType = document.getElementById('viz-type').value;
+  const colX = document.getElementById('viz-x').value;
+  const colY = document.getElementById('viz-y').value;
+  
+  const data = attachedFile.parsedData;
+  const agg = {};
+  
+  data.forEach(row => {
+    const valX = row[colX];
+    const valY = parseFloat(row[colY]);
+    
+    if (valX !== undefined && valX !== null && valX !== '' && !isNaN(valY)) {
+      const key = String(valX);
+      if (!agg[key]) agg[key] = 0;
+      agg[key] += valY;
+    }
+  });
+
+  const isLine = chartType === 'line';
+  const sortedKeys = Object.keys(agg).sort((a, b) => {
+    if (isLine) return a.localeCompare(b);
+    return agg[b] - agg[a];
+  });
+  
+  const labels = [];
+  const values = [];
+  let otherSum = 0;
+  const limit = chartType === 'pie' || chartType === 'doughnut' ? 12 : 25;
+
+  sortedKeys.forEach((key, idx) => {
+    if (idx < limit || isLine) {
+      labels.push(key);
+      // Round to 2 decimal places to avoid floating point precision issues
+      values.push(Math.round(agg[key] * 100) / 100);
+    } else {
+      otherSum += agg[key];
+    }
+  });
+
+  if (otherSum > 0 && !isLine) {
+    labels.push("Other");
+    values.push(Math.round(otherSum * 100) / 100);
+  }
+
+  if (labels.length === 0) {
+    toast('No valid numeric data found for selected Y-Axis.');
+    return;
+  }
+
+  // Create standard markdown with JSON chart block
+  const markdownText = `Here is the visual representation of **${attachedFile.name}** (Label: \`${colX}\`, Value: \`${colY}\`):
+
+\`\`\`chart
+{
+  "type": "${chartType}",
+  "data": {
+    "labels": ${JSON.stringify(labels)},
+    "datasets": [{
+      "label": "${colY}",
+      "data": ${JSON.stringify(values)}
+    }]
+  }
+}
+\`\`\``;
+
+  // Insert programmatically as assistant response
+  appendMsg('assistant', markdownText, false, null, null, null, null);
+  
+  closeVisualizerModal();
+  toast('Chart generated!');
 }
 
 function checkWelcomeTransition() {
@@ -1954,7 +2752,174 @@ async function sendText(text, images = null, useVision = false, displayText = nu
   await streamReply(useVision);
 }
 
-function appendMsg(role, content, streaming=false, images=null, metrics=null, prompt=null) {
+function createActionsRow(role, content, metrics, sources) {
+  const actionsRow = document.createElement('div');
+  actionsRow.className = 'msg-meta-row';
+
+  // Left actions container
+  const leftActions = document.createElement('div');
+  leftActions.style.display = 'flex';
+  leftActions.style.alignItems = 'center';
+  leftActions.style.gap = '8px';
+
+  // 1. Copy button
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'msg-icon-btn';
+  copyBtn.title = 'Copy message';
+  copyBtn.innerHTML = `
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+  `;
+  copyBtn.addEventListener('click', () => {
+    let textToCopy = content;
+    if (role === 'user') {
+      if (content.startsWith('__SEARCH__')) {
+        textToCopy = content.slice(10);
+      } else if (content.startsWith('__RAG__')) {
+        textToCopy = content.slice(7);
+      } else if (content.startsWith('__FILE__')) {
+        const rest = content.slice(8);
+        const sepIdx = rest.indexOf('__');
+        textToCopy = rest.substring(sepIdx + 2);
+      }
+    }
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      toast('Copied to clipboard!');
+    });
+  });
+  leftActions.appendChild(copyBtn);
+
+  // 2. Share/Export (Download) button (only for assistant responses)
+  if (role === 'assistant') {
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'msg-icon-btn';
+    exportBtn.title = 'Export as Markdown';
+    exportBtn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+        <polyline points="16 6 12 2 8 6"></polyline>
+        <line x1="12" y1="2" x2="12" y2="15"></line>
+      </svg>
+    `;
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `response_${Date.now()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('Downloaded response as Markdown!');
+    });
+    leftActions.appendChild(exportBtn);
+
+    // 3. Sources Drawer (only if sources are present)
+    if (sources && sources.length > 0) {
+      const uniqueDomains = [];
+      const uniqueSources = [];
+      sources.forEach(src => {
+        try {
+          const domain = new URL(src).hostname.replace('www.', '');
+          if (!uniqueDomains.includes(domain)) {
+            uniqueDomains.push(domain);
+            uniqueSources.push({ url: src, domain: domain });
+          }
+        } catch (e) {
+          // ignore invalid URLs
+        }
+      });
+
+      if (uniqueSources.length > 0) {
+        const details = document.createElement('details');
+        details.className = 'sources-details';
+        details.style.position = 'relative';
+
+        const summary = document.createElement('summary');
+        
+        let faviconsHtml = '<div style="display: flex; align-items: center; margin-right: 4px;">';
+        uniqueSources.slice(0, 3).forEach((src, idx) => {
+          const favUrl = `https://www.google.com/s2/favicons?sz=64&domain=${src.domain}`;
+          faviconsHtml += `<img src="${favUrl}" style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--white); margin-left: ${idx === 0 ? '0' : '-6px'}; background: var(--bg); position: relative; z-index: ${10 - idx};" title="${src.domain}" />`;
+        });
+        faviconsHtml += '</div>';
+
+        summary.innerHTML = `${faviconsHtml}<span style="font-size: 12px; color: var(--text-2); font-weight: 500; user-select: none;">Sources</span>`;
+        details.appendChild(summary);
+
+        const popover = document.createElement('div');
+        popover.className = 'sources-popover';
+        popover.style.position = 'absolute';
+        popover.style.bottom = '100%';
+        popover.style.left = '0';
+        popover.style.marginBottom = '8px';
+        popover.style.background = 'var(--bg-sidebar)';
+        popover.style.border = '1px solid var(--border)';
+        popover.style.borderRadius = 'var(--radius-sm)';
+        popover.style.padding = '8px';
+        popover.style.zIndex = '100';
+        popover.style.minWidth = '250px';
+        popover.style.boxShadow = 'var(--shadow-md)';
+        popover.style.display = 'flex';
+        popover.style.flexDirection = 'column';
+        popover.style.gap = '6px';
+
+        uniqueSources.forEach(src => {
+          const favUrl = `https://www.google.com/s2/favicons?sz=64&domain=${src.domain}`;
+          const item = document.createElement('a');
+          item.href = src.url;
+          item.target = '_blank';
+          item.rel = 'noopener noreferrer';
+          item.style.display = 'flex';
+          item.style.alignItems = 'center';
+          item.style.gap = '8px';
+          item.style.textDecoration = 'none';
+          item.style.color = 'var(--text-2)';
+          item.style.fontSize = '12px';
+          item.style.padding = '4px 6px';
+          item.style.borderRadius = '4px';
+          item.style.transition = '0.15s';
+          
+          item.onmouseover = () => {
+            item.style.color = 'var(--text-1)';
+            item.style.background = 'var(--white)';
+          };
+          item.onmouseout = () => {
+            item.style.color = 'var(--text-2)';
+            item.style.background = 'transparent';
+          };
+
+          item.innerHTML = `<img src="${favUrl}" style="width: 14px; height: 14px; border-radius: 50%;" /><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">${src.domain}</span>`;
+          popover.appendChild(item);
+        });
+
+        details.appendChild(popover);
+        leftActions.appendChild(details);
+      }
+    }
+  }
+
+  actionsRow.appendChild(leftActions);
+
+  // Right metrics
+  if (role === 'assistant' && metrics) {
+    const metricsDiv = document.createElement('div');
+    metricsDiv.className = 'msg-metrics';
+    metricsDiv.innerHTML = `
+      <span class="metric-badge" title="Tokens per second"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: #eab308; fill: #eab308; margin-right: 3px;"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>${metrics.tps} t/s</span>
+      <span class="metric-badge" title="Total response time (Load time: ${metrics.loadSec}s)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: var(--text-2); margin-right: 3px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>${metrics.totalSec}s</span>
+      <span class="metric-badge" title="Prompt: ${metrics.promptCount} tokens | Response: ${metrics.evalCount} tokens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: #a855f7; margin-right: 3px;"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>${metrics.promptCount + metrics.evalCount} tkn</span>
+    `;
+    actionsRow.appendChild(metricsDiv);
+  }
+
+  return actionsRow;
+}
+
+function appendMsg(role, content, streaming=false, images=null, metrics=null, prompt=null, sources=null) {
   const container = document.getElementById('messages');
   const row = document.createElement('div');
   row.className = `msg-row ${role}`;
@@ -2003,6 +2968,16 @@ function appendMsg(role, content, streaming=false, images=null, metrics=null, pr
       </div>`;
       
       bubble.innerHTML = `${imgHtml}${badgeHtml}${actualQuestion ? `<p style="margin:4px 0 0;">${escHtml(actualQuestion)}</p>` : ''}`;
+    } else if (content.startsWith('__RAG__')) {
+      const actualQuestion = content.slice(7);
+      const badgeHtml = `<div class="rag-badge">
+        <span style="display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14.5px; height: 14.5px; stroke: currentColor;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </span>
+        <span>Search Your Data Active</span>
+      </div>`;
+      
+      bubble.innerHTML = `${imgHtml}${badgeHtml}${actualQuestion ? `<p style="margin:4px 0 0;">${escHtml(actualQuestion)}</p>` : ''}`;
     } else {
       if (imgHtml) {
         bubble.innerHTML = `${imgHtml}<p style="margin:0;">${escHtml(content)}</p>`;
@@ -2012,54 +2987,14 @@ function appendMsg(role, content, streaming=false, images=null, metrics=null, pr
     }
   }
 
-  const actionsRow = document.createElement('div');
-  actionsRow.className = 'msg-meta-row';
-
-  const msgActions = document.createElement('div');
-  msgActions.className = 'msg-actions';
-  
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'msg-act-btn';
-  copyBtn.textContent = 'Copy';
-  copyBtn.addEventListener('click', () => {
-    let textToCopy = content;
-    if (role === 'user') {
-      if (content.startsWith('__SEARCH__')) {
-        textToCopy = content.slice(10);
-      } else if (content.startsWith('__FILE__')) {
-        const rest = content.slice(8);
-        const sepIdx = rest.indexOf('__');
-        textToCopy = rest.substring(sepIdx + 2);
-      }
-    }
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      copyBtn.textContent = 'Copied!';
-      copyBtn.classList.add('copied');
-      setTimeout(() => {
-        copyBtn.textContent = 'Copy';
-        copyBtn.classList.remove('copied');
-      }, 2000);
-    });
-  });
-  
-  msgActions.appendChild(copyBtn);
-  actionsRow.appendChild(msgActions);
-  
-  if (role === 'assistant' && metrics) {
-    const metricsDiv = document.createElement('div');
-    metricsDiv.className = 'msg-metrics';
-    metricsDiv.innerHTML = `
-      <span class="metric-badge" title="Tokens per second"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: #eab308; fill: #eab308; margin-right: 3px;"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>${metrics.tps} t/s</span>
-      <span class="metric-badge" title="Total response time (Load time: ${metrics.loadSec}s)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: var(--text-2); margin-right: 3px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>${metrics.totalSec}s</span>
-      <span class="metric-badge" title="Prompt: ${metrics.promptCount} tokens | Response: ${metrics.evalCount} tokens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: #a855f7; margin-right: 3px;"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>${metrics.promptCount + metrics.evalCount} tkn</span>
-    `;
-    actionsRow.appendChild(metricsDiv);
-  }
-
   const wrap = document.createElement('div');
   wrap.className = 'msg-content-wrap';
   wrap.appendChild(bubble);
-  wrap.appendChild(actionsRow);
+
+  if (role === 'assistant' && !streaming) {
+    const actionsRow = createActionsRow(role, content, metrics, sources);
+    wrap.appendChild(actionsRow);
+  }
 
   if (role==='assistant') { row.appendChild(av); row.appendChild(wrap); }
   else { row.appendChild(wrap); row.appendChild(av); }
@@ -2071,13 +3006,39 @@ function appendMsg(role, content, streaming=false, images=null, metrics=null, pr
     if (prompt) msgObj.prompt = prompt;
     if (images) msgObj.images = images;
     if (metrics) msgObj.metrics = metrics;
+    if (sources) msgObj.sources = sources;
     chats[currentId].messages.push(msgObj);
     document.getElementById('chat-sub').textContent =
       `${chats[currentId].messages.filter(m=>m.role!=='system').length} messages`;
     saveChats();
   }
-  scrollBottom();
+  scrollBottom(true);
   return { row, bubble, wrap };
+}
+
+function getFriendlyErrorMessage(errorMsg) {
+  if (!errorMsg) return "Something went wrong. Let's try rephrasing your request.";
+  const err = errorMsg.toLowerCase();
+  
+  if (err.includes('cuda') || err.includes('0xc0000409') || err.includes('vram') || err.includes('out of memory') || err.includes('failed to load model') || err.includes('out of resources')) {
+    return "I ran out of memory (VRAM) while loading the model. Please close other GPU apps, restart Ollama, and try again.";
+  }
+  if (err.includes('fetch') || err.includes('unreachable') || err.includes('connect') || err.includes('failed to fetch')) {
+    return "I cannot reach the local engine. Please make sure Ollama is open and running on your PC.";
+  }
+  if (err.includes('vm run') || err.includes('calculations failed') || err.includes('interpreter')) {
+    return "I encountered an issue analyzing the dataset. Please check if the file format and columns are correct.";
+  }
+  if (err.includes('tavily') || err.includes('search failed')) {
+    return "The web search service is temporarily unreachable. Please check your internet connection or Tavily API key in settings.";
+  }
+  
+  // Generic fallback if it looks like trace/jargon
+  if (err.includes('at ') || err.includes('\n') || err.includes('stack') || err.includes('typeerror') || err.includes('syntaxerror')) {
+    return "The local model failed to respond. Please try rephrasing your request or checking your model installation.";
+  }
+  
+  return errorMsg;
 }
 
 function getTroubleshootingHtml(errorMsg) {
@@ -2089,7 +3050,9 @@ function getTroubleshootingHtml(errorMsg) {
     errorLower.includes('0xc0000409') || 
     errorLower.includes('shared object') ||
     errorLower.includes('vram') ||
-    errorLower.includes('gpu memory')
+    errorLower.includes('gpu memory') ||
+    errorLower.includes('failed to load model') ||
+    errorLower.includes('out of resources')
   ) {
     return `
       <div style="margin-top: 10px; padding: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; font-size: 12.5px; color: #fca5a5; line-height: 1.5; text-align: left;">
@@ -2105,6 +3068,22 @@ function getTroubleshootingHtml(errorMsg) {
   }
   
   return '';
+}
+
+function isAmbiguousOrGibberish(text) {
+  if (!text) return true;
+  const t = text.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
+  
+  const allowedShort = new Set([
+    'hi', 'hello', 'hey', 'hola', 'greetings', 'gday', 'hiya', 'howdy', 'sup', 'yo',
+    'bye', 'goodbye', 'see ya', 'thanks', 'thank you', 'ok', 'okay', 'yes', 'no',
+    'ai', 'go', 'do', 'am', 'is', 'me', 'my', 'we', 'us', 'he', 'it', 'up', 'so', 'oh', 'ah'
+  ]);
+  
+  if (allowedShort.has(t)) return false;
+  if (t.length <= 2) return true;
+  if (t.length === 3 && !/[aeiouy]/i.test(t)) return true;
+  return false;
 }
 
 async function streamReply(useVision = false) {
@@ -2126,58 +3105,241 @@ async function streamReply(useVision = false) {
   wrap.className = 'msg-content-wrap';
   wrap.appendChild(bubble);
   row.appendChild(av); row.appendChild(wrap);
-  container.appendChild(row); scrollBottom();
+  container.appendChild(row); userHasScrolledUp = false; scrollBottom(true);
+
+  // Check for ambiguous or gibberish text input (skip if using vision/images)
+  const lastUserMsg = chats[currentId]?.messages.filter(m => m.role === 'user').slice(-1)[0];
+  let userText = lastUserMsg ? (lastUserMsg.prompt || lastUserMsg.content || '') : '';
+  if (userText.startsWith('__SEARCH__')) userText = userText.slice(10);
+  if (userText.startsWith('__RAG__')) userText = userText.slice(7);
+  if (userText.startsWith('__FILE__')) {
+    const rest = userText.slice(8);
+    const sepIdx = rest.indexOf('__');
+    userText = rest.substring(sepIdx + 2);
+  }
+
+  if (!useVision && isAmbiguousOrGibberish(userText)) {
+    let replyText = "Sorry, could you please tell me more or clarify what you need?";
+    let currentText = '';
+    const words = replyText.split(' ');
+    for (let i = 0; i < words.length; i++) {
+      currentText += (i === 0 ? '' : ' ') + words[i];
+      bubble.innerHTML = renderMD(currentText);
+      scrollBottom();
+      await new Promise(r => setTimeout(r, 60));
+    }
+    
+    bubble.classList.remove('stream-cursor');
+    bubble.classList.remove('streaming');
+    
+    if (currentId) {
+      const msgObj = { role: 'assistant', content: replyText };
+      chats[currentId].messages.push(msgObj);
+      document.getElementById('chat-sub').textContent =
+        `${chats[currentId].messages.filter(m => m.role !== 'system').length} messages`;
+      saveChats();
+    }
+    
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'msg-meta-row';
+    let copyBtnHtml = `<div class="msg-actions"><button class="msg-act-btn" onclick="copyMsg(this,\`${esc(replyText)}\`)">Copy</button></div>`;
+    actionsRow.innerHTML = copyBtnHtml;
+    wrap.appendChild(actionsRow);
+    
+    streaming = false;
+    ctrl = null;
+    btn.innerHTML = `<svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`;
+    btn.classList.remove('stop-btn');
+    return;
+  }
+
+  // ── Runtime Date & Festival Context ──────────────────────────────────────
+  function buildDateContext() {
+    const now = new Date();
+    const days  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    const todayStr     = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    const timeStr      = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    const yesterday    = new Date(now); yesterday.setDate(now.getDate() - 1);
+    const yesterdayStr = `${days[yesterday.getDay()]}, ${yesterday.getDate()} ${months[yesterday.getMonth()]} ${yesterday.getFullYear()}`;
+
+    const tomorrow     = new Date(now); tomorrow.setDate(now.getDate() + 1);
+    const tomorrowStr  = `${days[tomorrow.getDay()]}, ${tomorrow.getDate()} ${months[tomorrow.getMonth()]} ${tomorrow.getFullYear()}`;
+
+    // Fixed + variable festival dates (covering 2025, 2026, 2027)
+    const y = now.getFullYear();
+    const festivals = [
+      // Fixed global
+      { name: 'New Year\'s Day',     date: new Date(y + 1, 0, 1)  },
+      { name: 'Valentine\'s Day',    date: new Date(y, 1, 14)      },
+      { name: 'Halloween',           date: new Date(y, 9, 31)      },
+      { name: 'Christmas',           date: new Date(y, 11, 25)     },
+      { name: 'Christmas Eve',       date: new Date(y, 11, 24)     },
+      { name: 'New Year\'s Eve',     date: new Date(y, 11, 31)     },
+      // India fixed
+      { name: 'Republic Day (India)',      date: new Date(y, 0, 26)  },
+      { name: 'Independence Day (India)',  date: new Date(y, 7, 15)  },
+      { name: 'Gandhi Jayanti',            date: new Date(y, 9, 2)   },
+      // Variable - pre-computed for 2025-2027
+      ...(y === 2025 ? [
+        { name: 'Holi',    date: new Date(2025, 2, 14)  },
+        { name: 'Eid ul-Fitr',  date: new Date(2025, 2, 31)  },
+        { name: 'Good Friday',  date: new Date(2025, 3, 18)  },
+        { name: 'Easter',       date: new Date(2025, 3, 20)  },
+        { name: 'Diwali',  date: new Date(2025, 9, 20)  },
+      ] : y === 2026 ? [
+        { name: 'Holi',    date: new Date(2026, 2, 4)   },
+        { name: 'Eid ul-Fitr',  date: new Date(2026, 2, 20)  },
+        { name: 'Good Friday',  date: new Date(2026, 3, 3)   },
+        { name: 'Easter',       date: new Date(2026, 3, 5)   },
+        { name: 'Diwali',  date: new Date(2026, 10, 8)  },
+      ] : [
+        { name: 'Holi',    date: new Date(2027, 2, 22)  },
+        { name: 'Eid ul-Fitr',  date: new Date(2027, 2, 9)   },
+        { name: 'Good Friday',  date: new Date(2027, 2, 26)  },
+        { name: 'Easter',       date: new Date(2027, 2, 28)  },
+        { name: 'Diwali',  date: new Date(2027, 9, 29)  },
+      ]),
+    ];
+
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const upcoming = festivals
+      .map(f => {
+        // If this year's date has passed, try next year for fixed festivals
+        let d = new Date(f.date);
+        if (d < todayMidnight) d = new Date(d.getFullYear() + 1, d.getMonth(), d.getDate());
+        const diff = Math.round((d - todayMidnight) / 86400000);
+        return { name: f.name, diff };
+      })
+      .filter(f => f.diff >= 0)
+      .sort((a, b) => a.diff - b.diff)
+      .slice(0, 6)
+      .map(f => f.diff === 0 ? `🎉 ${f.name} — TODAY!` : f.diff === 1 ? `🎊 ${f.name} — Tomorrow!` : `📅 ${f.name} — in ${f.diff} days`)
+      .join('\n');
+
+    return `Current Date & Time (live, injected at runtime):
+- Today    : ${todayStr}
+- Time     : ${timeStr}
+- Yesterday: ${yesterdayStr}
+- Tomorrow : ${tomorrowStr}
+
+Upcoming Festivals & Holidays:
+${upcoming}`;
+  }
+
+  const dateContext = buildDateContext();
+  // ─────────────────────────────────────────────────────────────────────────
 
   const identityPrompt = `You are Openarc, a highly intelligent and thoughtful local AI assistant built by AREKG. You run 100% locally and surveillance-free via Ollama.
+
+${dateContext}
 
 Critical Rules:
 - NEVER use <think>, <thinking>, or <thought> tags. NEVER expose your reasoning process. Just respond directly.
 - NEVER start your response by describing what you will do (e.g. "I will analyze...", "Let me think about..."). Just do it and give the answer.
-- When someone says "hi", "hello", or any greeting, respond warmly and briefly like a friend would. Do NOT analyze the greeting.
+- Handle Ambiguous / Gibberish Inputs: If the user inputs an extremely short, ambiguous, or typo-like word/phrase (e.g. "gi", "g", single letters, or gibberish) that lacks clear context, do NOT try to guess what they mean or give a standard hello greeting. Instead, respond with: "Sorry, could you please tell me more or clarify what you need?"
+- When someone says "hi", "hello", or a clear greeting, respond warmly and briefly like a friend would. Do NOT analyze the greeting.
+- You ALWAYS know the current date and time from the injected context above. NEVER say you don't know what date or time it is.
+- NEVER write textual or italicized action/expression descriptions (e.g., do NOT write "smiling emoticon", "*smiling emoticon*", "*smiles*", or "*giggles*"). If you want to convey expressions, use a real emoji (such as 😊, 🙂, or 😉) naturally, or just write in a warm tone.
 
 Style & Tone:
 - Be warm, direct, and genuinely helpful. Write like a knowledgeable friend, not a corporate assistant.
 - Keep greetings short and natural. For example, if someone says "hi", just say hello back warmly and ask how you can help.
 - For tasks and questions, respond with substance and insight. Skip preambles and filler.
 - When asked what you can do, look at the conversation context and suggest specific ways you can help with what the user is working on.
+- Formatting & Layout: Proactively present listings of statistics, rankings, comparisons, or data metrics using Markdown Tables rather than plain lists to keep the visual presentation premium, clean, and highly readable.
+- Clean Output: Never output raw citation numbers like [1], [2], or backslash escapes (e.g. write "Macau, China" instead of "Macau\\ - China" or unformatted fragments). Format listings and titles with clean headers, and strip any backslash escapes.
+- Grammar, Coherence & Precision:
+  1. Maintain perfect English grammar, natural syntax, and complete sentence structure. Avoid awkward spacing, dangling lines, or parenthesized duplicate names (e.g., never output "Macao) (Macaou)").
+  2. Directly address the user's specific target query (e.g. if the user asks for "countries", provide countries; do not substitute "cities" instead unless you explicitly explain why).
+  3. Ensure bullet lists have entries aligned on a single line (e.g. "Singapore - 19 million visitors") rather than wrapping numbers to a newline below the item name.
 
 Core Knowledge:
 - Creator: Openarc was built by AREKG, an open-source startup dedicated to solving the privacy problem in AI.
 - Privacy: All processing happens entirely on the user's machine. No data leaves the device.
-- Web Search: You can leverage real-time search context when injected into the prompt.
-- Data Visualization: You can create beautiful charts (bar, line, pie, doughnut) by outputting a JSON block with the language "chart". 
+- Data Visualization: ONLY when the user explicitly asks for a chart, graph, plot, or visual representation, you can create beautiful charts (bar, line, pie, doughnut) by outputting a JSON block with the language "chart". NEVER generate a chart or JSON block unless the user explicitly requests one in their prompt. If the user does not request a chart, just answer with regular text or markdown tables.
 
-To create a chart, ALWAYS output exactly this format:
+To create a chart (ONLY when explicitly requested), ALWAYS output exactly this standard Plotly JSON format:
 \`\`\`chart
 {
-  "type": "bar",
-  "data": {
-    "labels": ["A", "B", "C"],
-    "datasets": [{ "label": "Dataset", "data": [10, 20, 30] }]
-  },
-  "options": {
-    "responsive": true
+  "data": [
+    {
+      "x": ["A", "B", "C"],
+      "y": [10, 20, 30],
+      "type": "bar",
+      "name": "Dataset Name"
+    }
+  ],
+  "layout": {
+    "title": "Chart Title",
+    "xaxis": { "title": "X Axis Label" },
+    "yaxis": { "title": "Y Axis Label" }
   }
 }
 \`\`\`
-Choose the best chart type for the data (bar, line, pie). Keep it clean.
+Choose the best chart type for the data (bar, scatter/line, pie). Keep it clean.
 IMPORTANT: The JSON format is ONLY for charts. When asked to create a table, ALWAYS use standard Markdown tables (e.g., | Column |). NEVER use JSON for tables.
 
 App Instructions (Explain only when the user explicitly asks how to use them):
-- Web Search: Click the globe icon in the input actions bar (requires Tavily API Key in Settings).
-- Settings: Click the gear icon in the sidebar or header to customize prompt, temperature, context size, and Tavily key.
+- Settings: Click the gear icon in the sidebar or header to customize prompt, temperature, context size, and Ollama server.
 - Theme: Toggle Light/Dark mode in the sidebar footer.
 - Files: Use the attachment clip icon to upload images, code, spreadsheets, or text files (PDF is not supported).
 - Mission: Click 'Our Mission' in the sidebar to read about our privacy values.`;
 
-  const combinedSys = sysprompt 
-    ? `${identityPrompt}\n\nAdditional instructions:\n${sysprompt}` 
-    : identityPrompt;
-  const msgs = [];
-  msgs.push({role:'system', content:combinedSys});
-  
   const modelToUse = useVision ? visionModel : getModel();
   const isMultimodal = isVisionCapable(modelToUse);
+
+  function isSmallModel(name) {
+    if (!name) return false;
+    const n = name.toLowerCase();
+    return n.includes('1b') || n.includes('2b') || n.includes('3b') || n.includes('1.5b') || n.startsWith('llama3.2') || n.startsWith('gemma2:2b');
+  }
+
+  let optimizedIdentity = identityPrompt;
+  if (useVision) {
+    optimizedIdentity = `You are Openarc, a highly intelligent and thoughtful local AI assistant built by AREKG. You run 100% locally and surveillance-free via Ollama.
+You are running as a vision model. Analyze and describe the attached image(s) accurately and answer any user questions based on the visual contents. Keep your observations strictly limited to what is visible in the image.`;
+  } else if (isSmallModel(modelToUse)) {
+    optimizedIdentity = `You are Openarc, a warm and direct local AI assistant built by AREKG, running 100% locally and privately via Ollama.
+${dateContext}
+
+Rules:
+1. Speak in a direct, zero-fluff manner. Skip conversational preambles and fillers.
+2. Keep text answers concise (1 to 3 sentences). But ALWAYS output the complete set of items if the user asks for a ranking or list. Never truncate lists early.
+3. For greetings, respond briefly and warmly.
+4. Tables: Proactively present listings/rankings using clean Markdown tables with pipes on every row (e.g. | Rank | City | \n |---|---| \n | 1 | Mumbai |). If you cannot output a complete table, use a clean numbered list instead. Never output broken tables.
+5. Data Visualization: ONLY when the user explicitly asks for a chart, graph, plot, or visual representation, you can create beautiful charts (bar, line, pie, doughnut) by outputting a JSON block with the language "chart". NEVER generate a chart or JSON block unless the user explicitly requests one in their prompt.
+
+To create a chart (ONLY when explicitly requested), ALWAYS output exactly this standard Plotly JSON format:
+\`\`\`chart
+{
+  "data": [
+    {
+      "x": ["A", "B", "C"],
+      "y": [10, 20, 30],
+      "type": "bar",
+      "name": "Dataset Name"
+    }
+  ],
+  "layout": {
+    "title": "Chart Title",
+    "xaxis": { "title": "X Axis Label" },
+    "yaxis": { "title": "Y Axis Label" }
+  }
+}
+\`\`\`
+Choose the best chart type for the data (bar, scatter/line, pie). Keep it clean.
+
+6. Do NOT output internal reasoning, <think> tags, or conversational rules.`;
+  }
+
+  const combinedSys = sysprompt 
+    ? `${optimizedIdentity}\n\nAdditional instructions:\n${sysprompt}` 
+    : optimizedIdentity;
+  const msgs = [];
+  msgs.push({role:'system', content:combinedSys});
 
   if (currentId && chats[currentId]) {
     chats[currentId].messages.forEach(m => { 
@@ -2203,12 +3365,14 @@ App Instructions (Explain only when the user explicitly asks how to use them):
     
     const reqOptions = {
       num_ctx: numCtx,
-      temperature: temp
+      temperature: temp,
+      repeat_penalty: 1.2,
+      top_p: 0.9
     };
     if (useVision) {
       toast(`Using vision model: ${visionModel}`, 3000);
     }
-    const res = await fetch(`${OLLAMA}/api/chat`, {
+    const res = await fetch(`${OLLAMA_API}/api/chat`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -2238,7 +3402,7 @@ App Instructions (Explain only when the user explicitly asks how to use them):
       }
       
       const troubleshootingHtml = getTroubleshootingHtml(errorMsg);
-      bubble.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;color:#ef4444; font-weight:500;"><svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Error: ${errorMsg}</span>${troubleshootingHtml}`;
+      bubble.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;color:#ef4444; font-weight:500;"><svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> ${getFriendlyErrorMessage(errorMsg)}</span>${troubleshootingHtml}`;
       bubble.classList.remove('stream-cursor');
       streaming = false;
       ctrl = null;
@@ -2274,7 +3438,7 @@ App Instructions (Explain only when the user explicitly asks how to use them):
           const d = JSON.parse(line);
           if (d.error) {
             const troubleshootingHtml = getTroubleshootingHtml(d.error);
-            bubble.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;color:#ef4444; font-weight:500;"><svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Error: ${d.error}</span>${troubleshootingHtml}`;
+            bubble.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;color:#ef4444; font-weight:500;"><svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> ${getFriendlyErrorMessage(d.error)}</span>${troubleshootingHtml}`;
             full = '';
             if (currentId && chats[currentId]) {
               chats[currentId].messages.pop();
@@ -2316,7 +3480,7 @@ App Instructions (Explain only when the user explicitly asks how to use them):
     }
   } catch(e) {
     if (e.name!=='AbortError') {
-      bubble.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;color:#ef4444; font-weight:500;"><svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Could not reach Ollama. Make sure it is running.</span>`;
+      bubble.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;color:#ef4444; font-weight:500;"><svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> ${getFriendlyErrorMessage(e.message || e)}</span>`;
       if (currentId && chats[currentId]) {
         chats[currentId].messages.pop();
         saveChats();
@@ -2329,89 +3493,28 @@ App Instructions (Explain only when the user explicitly asks how to use them):
   bubble.classList.remove('stream-cursor');
   bubble.classList.remove('streaming');
   
-  if (full && responseIndicatesLackOfKnowledge(full) && tavilyKey && !webSearchEnabled) {
-    const userMsgs = chats[currentId] ? chats[currentId].messages.filter(m => m.role === 'user') : [];
-    const lastUserMsg = userMsgs[userMsgs.length - 1];
-    if (lastUserMsg && !lastUserMsg.content.startsWith('__SEARCH__') && !lastUserMsg.content.startsWith('__FILE__')) {
-      const query = lastUserMsg.content;
-      
-      toast('Model lacks local info. Searching the web...', 3500);
-      const results = await fetchSearchResults(query);
-      if (results && results.length > 0) {
-        lastUserMsg.content = `__SEARCH__${query}`;
-        const searchContext = results.map(r => `Title: ${r.title}\nURL: ${r.url}\nContent: ${r.content}`).join('\n\n');
-        lastUserMsg.prompt = `Real-time Web Search Results Context:
----
-${searchContext}
----
 
-Using the real-time search results above, answer the user's question. If the search results contain the answer, you must use it to answer the question, even if it contradicts your offline training data cutoff. Do not mention that your training data is limited or cutoff when you have search results.
-
-User Question: ${query}`;
-        
-        // Update user bubble badge in UI
-        const userRow = row.previousElementSibling;
-        if (userRow && userRow.classList.contains('user')) {
-          const userBubble = userRow.querySelector('.msg-bubble');
-          if (userBubble) {
-            let imgHtml = '';
-            if (lastUserMsg.images && lastUserMsg.images.length) {
-              lastUserMsg.images.forEach(img => {
-                imgHtml += `<img src="data:image/png;base64,${img}" style="max-width: 100%; max-height: 250px; border-radius: 8px; margin-bottom: 8px; display: block;" />`;
-              });
-            }
-            const badgeHtml = `<div class="web-search-badge">
-              <span style="display:flex;align-items:center;justify-content:center;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 14.5px; height: 14.5px; stroke: currentColor;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-              </span>
-              <span>Web Search Enabled</span>
-            </div>`;
-            userBubble.innerHTML = `${imgHtml}${badgeHtml}<p style="margin:4px 0 0;">${escHtml(query)}</p>`;
-          }
-        }
-        
-        saveChats();
-        row.remove();
-        
-        // Reset state & re-stream
-        streaming = false;
-        ctrl = null;
-        await streamReply(useVision);
-        return;
-      }
-    }
-  }
 
   if (full) {
     let finalHtml = renderMD(full);
     bubble.innerHTML = finalHtml;
     bubble.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));
+    let savedSources = null;
     if (currentId) {
       const msgObj = {role:'assistant',content:full};
       if (metrics) msgObj.metrics = metrics;
+      if (lastSearchSources) {
+        msgObj.sources = lastSearchSources;
+        savedSources = lastSearchSources;
+        lastSearchSources = null;
+      }
       chats[currentId].messages.push(msgObj);
       document.getElementById('chat-sub').textContent =
         `${chats[currentId].messages.filter(m=>m.role!=='system').length} messages`;
       saveChats();
     }
     
-    const actionsRow = document.createElement('div');
-    actionsRow.className = 'msg-meta-row';
-    
-    let copyBtnHtml = `<div class="msg-actions"><button class="msg-act-btn" onclick="copyMsg(this,\`${esc(full)}\`)">Copy</button></div>`;
-    
-    let metricsHtml = '';
-    if (metrics) {
-      metricsHtml = `
-        <div class="msg-metrics">
-          <span class="metric-badge" title="Tokens per second"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: #eab308; fill: #eab308; margin-right: 3px;"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>${metrics.tps} t/s</span>
-          <span class="metric-badge" title="Total response time (Load time: ${metrics.loadSec}s)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: var(--text-2); margin-right: 3px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>${metrics.totalSec}s</span>
-          <span class="metric-badge" title="Prompt: ${metrics.promptCount} tokens | Response: ${metrics.evalCount} tokens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px; stroke: #a855f7; margin-right: 3px;"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>${metrics.promptCount + metrics.evalCount} tkn</span>
-        </div>
-      `;
-    }
-    
-    actionsRow.innerHTML = `${copyBtnHtml}${metricsHtml}`;
+    const actionsRow = createActionsRow('assistant', full, metrics, savedSources);
     wrap.appendChild(actionsRow);
   }
 
@@ -2439,8 +3542,67 @@ function copyCode(btn) {
 function renderMD(text) {
   marked.setOptions({breaks:true,gfm:true});
   
+  // Clean up common local model backslash escapes, loose citations, and trailing pipe artifacts
+  let htmlText = text
+    .replace(/\\([A-Za-z \-():[\]{}#+!|*`_])/g, '$1')
+    .replace(/\[\d+\]/g, '')
+    .replace(/\s*\|\s*$/g, '');
+
+  // Auto-correct broken Markdown tables (e.g. missing separator pipes or list items under header)
+  let lines = htmlText.split('\n');
+  let inTable = false;
+  let colCount = 0;
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (line.startsWith('|') && line.endsWith('|')) {
+      const cols = line.split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+      if (cols.length > 0) {
+        if (!inTable) {
+          inTable = true;
+          colCount = cols.length;
+        }
+        continue;
+      }
+    }
+    if (inTable && i > 0 && lines[i-1].trim().startsWith('|')) {
+      if (/^[-\s|]+$/.test(line) && line.includes('-')) {
+        lines[i] = '|' + Array(colCount).fill('---').join('|') + '|';
+        continue;
+      }
+    }
+    if (inTable && !line.startsWith('|') && line.length > 0) {
+      let parts = [];
+      const numMatch = line.match(/^(\d+|[a-zA-Z]|\d+\.|\d+\)|[①-⑩]|[\u2460-\u2469])\s+(.*)$/);
+      if (numMatch && colCount === 2) {
+        parts = [numMatch[1], numMatch[2]];
+      } else {
+        parts = line.split(/\s{2,}|\t+/).filter(Boolean);
+        if (parts.length < colCount) {
+          const firstSpace = line.indexOf(' ');
+          if (firstSpace !== -1 && colCount === 2) {
+            parts = [line.substring(0, firstSpace), line.substring(firstSpace + 1)];
+          } else {
+            parts = [line];
+          }
+        }
+      }
+      while (parts.length < colCount) parts.push('');
+      if (parts.length > colCount) {
+        const mainParts = parts.slice(0, colCount - 1);
+        const lastPart = parts.slice(colCount - 1).join(' ');
+        mainParts.push(lastPart);
+        parts = mainParts;
+      }
+      lines[i] = '| ' + parts.map(p => p.trim()).join(' | ') + ' |';
+    } else if (line.length === 0) {
+      inTable = false;
+      colCount = 0;
+    }
+  }
+  htmlText = lines.join('\n');
+  
   // Filter out any raw special tokens (e.g. <|reserved_special_token_xxx|>)
-  let htmlText = text.replace(/<\|reserved_special_token_\d+\|>/g, '');
+  htmlText = htmlText.replace(/<\|reserved_special_token_\d+\|>/g, '');
   
   // Strip <think> tags and their content entirely — never show internal reasoning
   htmlText = htmlText.replace(/<(thinking|think|thought)>[\s\S]*?<\/(thinking|think|thought)>/gi, '');
@@ -2450,62 +3612,19 @@ function renderMD(text) {
   htmlText = htmlText.replace(/<remember>[\s\S]*?(?:<\/remember>|$)/gi, '');
   
   // -- Robust Chart JSON Auto-Wrapper --
-  // Models sometimes fail to wrap JSON charts in ```chart blocks. This loop perfectly extracts them.
-  let searchOffset = 0;
-  while (true) {
-    let sub = htmlText.substring(searchOffset);
-    let typeMatch = sub.match(/"type"\s*:\s*"(bar|line|pie|doughnut)"/i);
-    if (!typeMatch) break;
-    
-    let typeIndex = searchOffset + typeMatch.index;
-    let startIndex = htmlText.lastIndexOf('{', typeIndex);
-    
-    if (startIndex < searchOffset) {
-      searchOffset = typeIndex + 10;
-      continue;
-    }
-    
-    let braceCount = 0;
-    let endIndex = -1;
-    let insideString = false;
-    let escapeNext = false;
-    
-    for (let j = startIndex; j < htmlText.length; j++) {
-      let char = htmlText[j];
-      if (escapeNext) { escapeNext = false; continue; }
-      if (char === '\\') { escapeNext = true; continue; }
-      if (char === '"') { insideString = !insideString; continue; }
-      
-      if (!insideString) {
-        if (char === '{') braceCount++;
-        else if (char === '}') {
-          braceCount--;
-          if (braceCount === 0) {
-            endIndex = j;
-            break;
-          }
-        }
-      }
-    }
-    
-    if (endIndex !== -1) {
-      let jsonStr = htmlText.substring(startIndex, endIndex + 1);
-      let beforeMatch = htmlText.substring(0, startIndex).match(/```[a-z]*\s*$/i);
-      let afterMatch = htmlText.substring(endIndex + 1).match(/^\s*```/);
-      
-      if (beforeMatch && afterMatch) {
-        htmlText = htmlText.substring(0, startIndex - beforeMatch[0].length) + 
-                   '\n```chart\n' + jsonStr + '\n```\n' + 
-                   htmlText.substring(endIndex + 1 + afterMatch[0].length);
-        searchOffset = startIndex - beforeMatch[0].length + jsonStr.length + 20;
-      } else {
-        htmlText = htmlText.substring(0, startIndex) + 
-                   '\n```chart\n' + jsonStr + '\n```\n' + 
-                   htmlText.substring(endIndex + 1);
-        searchOffset = startIndex + jsonStr.length + 20;
-      }
-    } else {
-      searchOffset = typeIndex + 10;
+  // Models sometimes fail to wrap JSON charts in ```chart blocks, or they use ```json.
+  htmlText = htmlText.replace(/```json\s*(\{[\s\S]*?"type"\s*:\s*"(?:bar|line|pie|doughnut)"[\s\S]*?\})\s*```/gi, "```chart\n$1\n```");
+  htmlText = htmlText.replace(/```\s*(\{[\s\S]*?"type"\s*:\s*"(?:bar|line|pie|doughnut)"[\s\S]*?\})\s*```/gi, "```chart\n$1\n```");
+
+  if (!htmlText.includes('```chart') && /"type"\s*:\s*"(?:bar|line|pie|doughnut)"/i.test(htmlText)) {
+    const firstBrace = htmlText.indexOf('{');
+    const lastBrace = htmlText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      const possibleJson = htmlText.substring(firstBrace, lastBrace + 1);
+      try {
+        JSON.parse(possibleJson);
+        htmlText = htmlText.substring(0, firstBrace) + '\n```chart\n' + possibleJson + '\n```\n' + htmlText.substring(lastBrace + 1);
+      } catch (e) {}
     }
   }
   // ------------------------------------
@@ -2517,65 +3636,111 @@ function renderMD(text) {
       const unescapedCode = code.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
       const chartId = 'chart_' + Math.random().toString(36).substr(2, 9);
       return `
-      <div class="chart-container" style="position: relative; height: 400px; width: 100%; margin: 20px 0; background: var(--bg-sidebar); border-radius: 12px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-        <canvas id="${chartId}"></canvas>
+      <div class="chart-container" style="display: inline-block; position: relative; height: 350px; min-width: 300px; width: calc(50% - 24px); flex: 1 1 45%; margin: 10px 1%; background: var(--bg-sidebar); border-radius: 12px; padding: 15px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; vertical-align: top;">
+        <div id="${chartId}" style="width: 100%; height: 100%;"></div>
       </div>
       <script>
         setTimeout(() => {
           try {
-            const ctx = document.getElementById('${chartId}').getContext('2d');
-            const config = JSON.parse(\`${unescapedCode.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`);
-            
-            // Force responsive sizing
-            config.options = config.options || {};
-            config.options.responsive = true;
-            config.options.maintainAspectRatio = false;
-            
-            // Premium Openarc Tooltip & Legend
-            config.options.plugins = config.options.plugins || {};
-            config.options.plugins.legend = config.options.plugins.legend || { position: 'bottom', labels: { padding: 20, usePointStyle: true } };
-            config.options.plugins.tooltip = {
-              backgroundColor: 'rgba(9, 9, 11, 0.95)',
-              titleColor: '#f4f4f5',
-              bodyColor: '#a1a1aa',
-              borderColor: '#27272a',
-              borderWidth: 1,
-              padding: 12,
-              cornerRadius: 8,
-              displayColors: true,
-              boxPadding: 4
-            };
-            
-            // Set global defaults for sleek dark mode
-            Chart.defaults.font.family = "'Inter', sans-serif";
-            Chart.defaults.color = '#a1a1aa';
-            Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.05)';
-            
-            // Override with Vibrant Premium Colors
-            const premiumColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-            
-            if (config.data && config.data.datasets) {
-              config.data.datasets.forEach((ds, i) => {
-                if (config.type === 'pie' || config.type === 'doughnut') {
-                  ds.backgroundColor = premiumColors;
-                  ds.borderColor = '#121215'; // Match sidebar background
-                  ds.borderWidth = 2;
-                  ds.hoverOffset = 6;
-                } else {
-                  ds.backgroundColor = premiumColors[i % premiumColors.length] + 'cc';
-                  ds.borderColor = premiumColors[i % premiumColors.length];
-                  ds.borderWidth = 2;
-                  ds.borderRadius = 4; // Rounded bars
+            // Remove trailing commas to fix invalid JSON syntax generated by small models
+            let cleanCode = \`${unescapedCode.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
+            cleanCode = cleanCode.replace(/,\\s*([\\}\\]])/g, '$1');
+            const rawConfig = JSON.parse(cleanCode);
+            let data = [];
+            let layout = {};
+
+            // Translate simplified Chart.js config to Plotly format if necessary
+            if (rawConfig.data && rawConfig.data.datasets) {
+              const type = rawConfig.type || 'bar';
+              const isPie = ['pie', 'doughnut'].includes(type);
+              
+              if (isPie) {
+                data = [{
+                  labels: rawConfig.data.labels || [],
+                  values: rawConfig.data.datasets[0].data || [],
+                  type: 'pie',
+                  hole: type === 'doughnut' ? 0.45 : 0,
+                  marker: { colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'] },
+                  textinfo: 'percent+label',
+                  insidetextorientation: 'radial'
+                }];
+              } else {
+                data = rawConfig.data.datasets.map((ds, idx) => {
+                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+                  return {
+                    x: rawConfig.data.labels || [],
+                    y: ds.data || [],
+                    type: type === 'line' ? 'scatter' : 'bar',
+                    mode: type === 'line' ? 'lines+markers' : undefined,
+                    name: ds.label || 'Dataset',
+                    marker: { color: colors[idx % colors.length] },
+                    line: type === 'line' ? { color: colors[idx % colors.length], width: 3 } : undefined
+                  };
+                });
+              }
+              layout = {
+                title: { text: rawConfig.options?.plugins?.title?.text || '', font: { color: '#f4f4f5', size: 14, family: 'Inter' } }
+              };
+            } else {
+              // Direct Plotly JSON format
+              data = rawConfig.data || [];
+              layout = rawConfig.layout || {};
+              
+              // Auto-fix pie charts if LLM used x/y instead of labels/values
+              data.forEach(trace => {
+                if ((trace.type === 'pie' || trace.type === 'doughnut') && trace.x && trace.y) {
+                  trace.labels = trace.labels || trace.x;
+                  trace.values = trace.values || trace.y;
+                  delete trace.x;
+                  delete trace.y;
+                }
+                if (trace.type === 'pie' || trace.type === 'doughnut') {
+                  trace.textinfo = 'percent+label';
+                  trace.marker = trace.marker || { colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'] };
                 }
               });
             }
+
+            // Apply premium dark/light theme styling dynamically
+            const themeDark = document.documentElement.getAttribute('data-theme') !== 'light';
+            const paperBg = 'transparent';
+            const gridColor = themeDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = themeDark ? '#a1a1aa' : '#555555';
             
-            new Chart(ctx, config);
+            layout.paper_bgcolor = paperBg;
+            layout.plot_bgcolor = 'transparent';
+            layout.margin = layout.margin || { t: 40, r: 20, b: 40, l: 50 };
+            layout.font = { family: 'Inter, sans-serif', color: textColor, size: 11 };
+            
+            // X-axis styling
+            layout.xaxis = layout.xaxis || {};
+            layout.xaxis.gridcolor = gridColor;
+            layout.xaxis.zeroline = false;
+            layout.xaxis.tickfont = { color: textColor };
+            
+            // Y-axis styling
+            layout.yaxis = layout.yaxis || {};
+            layout.yaxis.gridcolor = gridColor;
+            layout.yaxis.zeroline = false;
+            layout.yaxis.tickfont = { color: textColor };
+            
+            layout.showlegend = layout.showlegend !== undefined ? layout.showlegend : true;
+            if (layout.showlegend) {
+              layout.legend = layout.legend || {};
+              layout.legend.orientation = 'h';
+              layout.legend.y = -0.18;
+              layout.legend.x = 0.5;
+              layout.legend.xanchor = 'center';
+              layout.legend.font = { color: textColor, size: 10 };
+            }
+
+            const config = { responsive: true, displayModeBar: false };
+            Plotly.newPlot('${chartId}', data, layout, config);
           } catch(e) {
-            console.error('Failed to render chart:', e);
-            document.getElementById('${chartId}').parentElement.innerHTML = '<div style="color: #ef4444; padding: 10px;">Error rendering chart: ' + e.message + '</div>';
+            console.error('Failed to render Plotly chart:', e);
+            document.getElementById('${chartId}').innerHTML = '<div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; color: var(--text-1); padding: 15px; font-size: 13px; line-height: 1.5; border-radius: 4px;"><strong>Chart Rendering Failed:</strong> The AI model generated invalid chart syntax.<br><br><strong>Tip:</strong> If you are working with large Excel or CSV files, small AI models can struggle to format the data perfectly. Instead of asking the AI to plot it, consider using the <strong>Visualize</strong> button (which appears below the chat input when a file is attached) to instantly generate charts securely in your browser!</div>';
           }
-        }, 100);
+        }, 150);
       <\/script>`;
     }
     
@@ -2631,6 +3796,7 @@ function esc(s) {
 
 // ── Settings & Search Toggle ──────────────────────────
 function openSettings() {
+  switchSettingsTab('settings');
   document.getElementById('sys-overlay').classList.add('open');
 }
 
@@ -2645,10 +3811,12 @@ function overlayClick(e) {
 function savePrompt() {
   sysprompt = document.getElementById('sys-input').value.trim();
   localStorage.setItem('oa_sys', sysprompt);
-  
-  tavilyKey = document.getElementById('tavily-key-input').value.trim();
-  localStorage.setItem('oa_tavily_key', tavilyKey);
-  
+
+  // Ollama Server URL — allows remote/ngrok connections
+  const ollamaUrlInput = document.getElementById('ollama-url-input').value.trim().replace(/\/$/, '');
+  localStorage.setItem('oa_ollama_url', ollamaUrlInput);
+  OLLAMA = ollamaUrlInput || ((window.location.protocol === 'http:' || window.location.protocol === 'https:') ? '' : 'http://127.0.0.1:11434');
+  OLLAMA_API = isRemote && !localStorage.getItem('oa_ollama_url') ? '/api/ollama' : OLLAMA;
   numCtx = parseInt(document.getElementById('ctx-input').value);
   localStorage.setItem('oa_num_ctx', numCtx);
   
@@ -2658,38 +3826,63 @@ function savePrompt() {
   closePrompt();
   toast('Settings saved');
 }
-
-function updateSearchToggleUI() {
-  const btnChat = document.getElementById('web-search-toggle');
-  const btnWelcome = document.getElementById('welcome-web-search-toggle');
+// ── Settings Tabs ─────────────────────────────────────
+function switchSettingsTab(tab) {
+  const settingsTab = document.getElementById('settings-tab-content');
+  const aboutTab = document.getElementById('about-tab-content');
+  const settingsBtn = document.getElementById('tab-settings-btn');
+  const aboutBtn = document.getElementById('tab-about-btn');
   
-  if (webSearchEnabled) {
-    if (btnChat) btnChat.classList.add('active');
-    if (btnWelcome) btnWelcome.classList.add('active');
+  if (tab === 'settings') {
+    settingsTab.style.display = 'block';
+    aboutTab.style.display = 'none';
+    
+    settingsBtn.style.color = 'var(--text-1)';
+    settingsBtn.style.fontWeight = '600';
+    settingsBtn.style.borderBottomColor = 'var(--text-1)';
+    
+    aboutBtn.style.color = 'var(--text-3)';
+    aboutBtn.style.fontWeight = '500';
+    aboutBtn.style.borderBottomColor = 'transparent';
   } else {
-    if (btnChat) btnChat.classList.remove('active');
-    if (btnWelcome) btnWelcome.classList.remove('active');
+    settingsTab.style.display = 'none';
+    aboutTab.style.display = 'block';
+    
+    settingsBtn.style.color = 'var(--text-3)';
+    settingsBtn.style.fontWeight = '500';
+    settingsBtn.style.borderBottomColor = 'transparent';
+    
+    aboutBtn.style.color = 'var(--text-1)';
+    aboutBtn.style.fontWeight = '600';
+    aboutBtn.style.borderBottomColor = 'var(--text-1)';
   }
 }
 
-function toggleWebSearch() {
-  webSearchEnabled = !webSearchEnabled;
-  localStorage.setItem('oa_web_search', webSearchEnabled);
-  updateSearchToggleUI();
-  toast(webSearchEnabled ? 'Web Search Enabled' : 'Web Search Disabled');
+// ── Your Data Modal ─────────────────────────────────────
+function openDataModal() {
+  document.getElementById('data-overlay').classList.add('open');
 }
 
-// ── Mission Modal ─────────────────────────────────────
-function openMissionModal() {
-  document.getElementById('mission-overlay').classList.add('open');
+function closeDataModal() {
+  document.getElementById('data-overlay').classList.remove('open');
 }
 
-function closeMission() {
-  document.getElementById('mission-overlay').classList.remove('open');
+function overlayDataClick(e) {
+  if (e.target === e.currentTarget) closeDataModal();
 }
 
-function overlayMissionClick(e) {
-  if (e.target === e.currentTarget) closeMission();
+function showActiveChat() {
+  const hasChats = Object.keys(chats).length > 0;
+  if (hasChats) {
+    if (currentId && chats[currentId]) {
+      loadChat(currentId);
+    } else {
+      const ids = Object.keys(chats);
+      loadChat(ids[ids.length - 1]);
+    }
+  } else {
+    showWelcome();
+  }
 }
 
 // ── Utils ─────────────────────────────────────────────
@@ -2707,8 +3900,25 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 160) + 'px';
 }
 
-function scrollBottom() {
+let userHasScrolledUp = false;
+
+// Listen for manual scroll on the messages container
+(function initScrollDetection() {
   const c = document.getElementById('messages');
+  if (!c) { document.addEventListener('DOMContentLoaded', initScrollDetection); return; }
+  
+  c.addEventListener('scroll', () => {
+    const distanceFromBottom = Math.ceil(c.scrollHeight - c.scrollTop - c.clientHeight);
+    // If user is more than 10px from the bottom, they've scrolled up intentionally.
+    // This allows even a small mouse wheel movement to pause auto-scrolling.
+    userHasScrolledUp = distanceFromBottom > 10;
+  }, { passive: true });
+})();
+
+function scrollBottom(force = false) {
+  const c = document.getElementById('messages');
+  // If user has scrolled up during streaming, don't force them back down
+  if (userHasScrolledUp && !force) return;
   requestAnimationFrame(() => {
     c.scrollTop = c.scrollHeight;
   });
@@ -2762,6 +3972,226 @@ function appClose() {
   } else {
     toast("Use Alt+F4 or close your browser tab to exit");
   }
+}
+
+//  Your Data Functions 
+
+
+function triggerKbFileInput() {
+  document.getElementById('kb-file-input').click();
+}
+
+async function handleKbFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const kbList = document.getElementById('kb-list');
+  const originalKbHtml = kbList.innerHTML;
+  kbList.innerHTML = `<div style="font-size: 11px; color: var(--text-2); text-align: center; padding: 12px 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <span class="rag-pulse-dot" style="animation-duration: 1s;"></span>
+    <span>Parsing & indexing document...</span>
+  </div>`;
+
+  try {
+    const reader = new FileReader();
+    reader.onload = async function() {
+      try {
+        const base64 = reader.result.split(',')[1];
+        const payload = {
+          filename: file.name,
+          base64: base64
+        };
+
+        const res = await fetch('/api/rag/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          toast(`Successfully indexed "${file.name}" into ${data.chunks} chunks!`, 4000);
+          loadKbDocuments();
+        } else {
+          if (data.error && data.error.includes("It might be an image or a scanned PDF")) {
+            processScannedPdf(file, base64);
+            return;
+          }
+          toast(`Error: ${data.error || 'Failed to index document'}`, 6000);
+          loadKbDocuments();
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        toast(`Upload failed: ${err.message}`, 5000);
+        loadKbDocuments();
+      }
+    };
+    reader.readAsDataURL(file);
+  } catch (err) {
+    console.error("File read error:", err);
+    toast(`File read failed: ${err.message}`, 5000);
+    loadKbDocuments();
+  }
+
+  // Reset input
+  event.target.value = '';
+}
+
+async function processScannedPdf(file, originalBase64) {
+  const kbList = document.getElementById('kb-list');
+  kbList.innerHTML = `<div style="font-size: 11px; color: var(--text-2); text-align: center; padding: 12px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+    <span class="rag-pulse-dot" style="animation-duration: 0.8s;"></span>
+    <span id="ocr-progress-text" style="font-weight: 500;">Scanning PDF pages...</span>
+  </div>`;
+
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
+    const pdf = await loadingTask.promise;
+    
+    const numPages = pdf.numPages;
+    let base64Images = [];
+    const progressText = document.getElementById('ocr-progress-text');
+
+    for (let i = 1; i <= numPages; i++) {
+      if (progressText) progressText.innerText = `Scanning page ${i} of ${numPages}...`;
+      const page = await pdf.getPage(i);
+      
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+
+      const imgBase64 = canvas.toDataURL('image/jpeg', 0.9);
+      base64Images.push(imgBase64);
+    }
+
+    if (progressText) progressText.innerText = `Running OCR Engine... (This may take a minute)`;
+
+    const res = await fetch('/api/rag/upload-scanned', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: file.name,
+        images: base64Images,
+        originalFileBase64: originalBase64
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      toast(`Successfully OCR scanned "${file.name}" into ${data.chunks} chunks!`, 5000);
+      loadKbDocuments();
+    } else {
+      toast(`OCR Error: ${data.error || 'Failed to scan'}`, 6000);
+      loadKbDocuments();
+    }
+
+  } catch (err) {
+    console.error("OCR rendering error:", err);
+    toast(`Scanning failed: ${err.message}`, 6000);
+    loadKbDocuments();
+  }
+}
+
+async function deleteKbDoc(filename) {
+  if (!confirm(`Are you sure you want to remove "${filename}" from Your Data?`)) {
+    return;
+  }
+  try {
+    const res = await fetch(`/api/rag/documents/${encodeURIComponent(filename)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`Deleted "${filename}"`, 3000);
+      loadKbDocuments();
+    } else {
+      toast(`Error: ${data.error || 'Failed to delete'}`, 5000);
+    }
+  } catch (err) {
+    console.error("Delete error:", err);
+    toast(`Delete failed: ${err.message}`, 5000);
+  }
+}
+
+async function loadKbDocuments() {
+  try {
+    const res = await fetch('/api/rag/documents');
+    const data = await res.json();
+    if (data.documents) {
+      updateKbUI(data.documents);
+    }
+  } catch (err) {
+    console.error("Failed to load KB documents:", err);
+  }
+}
+
+function updateKbUI(documents) {
+  const countBadge = document.getElementById('kb-count-badge');
+  if (countBadge) {
+    countBadge.innerText = `${documents.length} doc${documents.length === 1 ? '' : 's'}`;
+  }
+
+  const kbList = document.getElementById('kb-list');
+  if (!kbList) return;
+
+  if (documents.length === 0) {
+    kbList.innerHTML = `<div style="font-size: 11px; color: var(--text-3); font-style: italic; text-align: center; padding: 6px 0;">No documents indexed</div>`;
+    updateInputBadge();
+    return;
+  }
+
+  kbList.innerHTML = documents.map(doc => `
+    <div class="kb-item" style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; padding: 6px 8px; background: var(--white); border: 1px solid var(--border-light); border-radius: 6px; gap: 6px; transition: 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+      <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px; color: var(--text-3); flex-shrink: 0;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+        <a href="/uploads/${encodeURIComponent(doc)}" target="_blank" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; text-align: left; color: var(--text-2); text-decoration: none; font-weight: 500;" title="Preview ${escapeHtml(doc)}" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-2)'">
+          ${escapeHtml(doc)}
+        </a>
+      </div>
+      <button onclick="deleteKbDoc('${escapeHtml(doc)}')" style="background: var(--bg); border: 1px solid var(--border-light); border-radius: 4px; color: var(--text-3); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; transition: 0.15s;" title="Delete" onmouseover="this.style.color='red'; this.style.borderColor='red'" onmouseout="this.style.color='var(--text-3)'; this.style.borderColor='var(--border-light)'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 10px; height: 10px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  `).join('');
+
+  updateInputBadge();
+}
+
+function toggleRAG(enabled) {
+  ragEnabled = enabled;
+  localStorage.setItem('oa_rag_enabled', enabled);
+  updateInputBadge();
+}
+
+function updateInputBadge() {
+  const badge = document.getElementById('rag-status-badge');
+  const countSpan = document.getElementById('rag-badge-count');
+
+  const docCount = document.querySelectorAll('#kb-list .kb-item').length;
+
+  if (badge) {
+    if (ragEnabled && docCount > 0) {
+      badge.style.display = 'flex';
+      if (countSpan) countSpan.innerText = docCount;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 </script>
 </body>
