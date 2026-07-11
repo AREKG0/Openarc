@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/assets/logo.png" alt="Openarc Logo" width="150" />
   <h1>Openarc</h1>
-  <p><strong>A Private, Local AI Chat Interface for Ollama</strong></p>
+  <p><strong>A Private, Local AI Chat Interface</strong></p>
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
   [![GitHub Author](https://img.shields.io/badge/author-AREKG0-brightgreen)](https://github.com/AREKG0)
